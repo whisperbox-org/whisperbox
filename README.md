@@ -1,69 +1,45 @@
-# Welcome to your Lovable project
+# WhisperBox: Privacy-First Encrypted Decentralized Forms
 
-## Project info
+WhisperBox is a Web3-powered form platform that prioritizes privacy through end-to-end encryption and decentralized storage. Create secure forms, surveys, and polls without compromising user data.
 
-**URL**: https://lovable.dev/projects/ca522e90-da3c-46f3-bc38-89ec75d2a775
+![WhisperBox Logo](https://place-holder-for-logo.png)
 
-## How can I edit this code?
+## 🔒 Key Features
 
-There are several ways of editing your application.
+- **End-to-End Encryption**: All form responses are encrypted and can only be decrypted by authorized parties.
+- **Decentralized Storage**: Form data is stored on a decentralized network, not on vulnerable centralized servers.
+- **NFT-Based Access Control**: Restrict form access to specific NFT holders or whitelisted addresses.
+- **Modern UI/UX**: Beautiful, responsive interface built with React, Tailwind CSS, and Shadcn UI components.
 
-**Use Lovable**
+## 📋 Use Cases
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/ca522e90-da3c-46f3-bc38-89ec75d2a775) and start prompting.
+- **Private Surveys**: Collect sensitive feedback without exposing data.
+- **Decentralized Voting**: Run elections or polls with cryptographic security.
+- **NFT Community Engagement**: Create exclusive forms only accessible to your NFT holders.
+- **Secure Data Collection**: Gather information with mathematical privacy guarantees.
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🚀 Getting Started
 
-**Use your preferred IDE**
+### Prerequisites
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- Node.js (v16+)
+- Bun or npm
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Installation
+    
 
-Follow these steps:
+1. Install dependencies:
+   ```bash
+   bun install
+   # or
+   npm install
+   ```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+2. Start the development server:
+   ```bash
+   bun dev
+   # or
+   npm run dev
+   ```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with .
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/ca522e90-da3c-46f3-bc38-89ec75d2a775) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+3. Open [http://localhost:5173](http://localhost:5173) to view the app in your browser.
