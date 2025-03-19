@@ -130,14 +130,17 @@ const FormCreator: React.FC = () => {
         return;
       }
       
-      if ((questions[i].type === 'multipleChoice' || questions[i].type === 'checkbox') && 
-          (!questions[i].options || questions[i].options.length < 2)) {
-        toast({
-          title: "Not enough options",
-          description: `Question ${i + 1} needs at least 2 options.`,
-          variant: "destructive",
-        });
-        return;
+      // Check if options exist and have at least 2 items for choice-based questions
+      if ((questions[i].type === 'multipleChoice' || questions[i].type === 'checkbox')) {
+        const options = questions[i].options;
+        if (!options || options.length < 2) {
+          toast({
+            title: "Not enough options",
+            description: `Question ${i + 1} needs at least 2 options.`,
+            variant: "destructive",
+          });
+          return;
+        }
       }
     }
     
