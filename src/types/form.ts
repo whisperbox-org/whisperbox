@@ -29,6 +29,7 @@ export interface FormResponse {
   id: string;
   formId: string;
   respondent: string; // Wallet address
+  respondentENS: string | null;
   submittedAt: number;
   answers: {
     questionId: string;
@@ -40,4 +41,4 @@ export interface FormResponse {
 export type FormCreationParams = Omit<FormType, 'id' | 'responses' | 'createdAt'>;
 
 // Form submission parameter type (omitting generated fields)
-export type FormSubmissionParams = Omit<FormResponse, 'id' | 'submittedAt'>; 
+export type FormSubmissionParams = Omit<FormResponse, 'id' | 'submittedAt' | 'respondentENS'>; 

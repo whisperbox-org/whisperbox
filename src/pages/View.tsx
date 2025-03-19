@@ -9,7 +9,7 @@ import {
   canAccessForm, 
   hasResponded 
 } from '@/lib/formStore';
-import { getConnectedWallet } from '@/lib/wallet';
+import { getConnectedWallet, getENS } from '@/lib/wallet';
 import AnimatedTransition from '@/components/AnimatedTransition';
 import { useToast } from '@/hooks/use-toast';
 import { FormType } from '@/types';
@@ -89,7 +89,7 @@ const View: React.FC = () => {
           setHasAlreadyResponded(responded);
         }
       }
-      
+
       setLoading(false);
     };
     
@@ -306,6 +306,9 @@ const View: React.FC = () => {
                                   <div className="font-medium">Anonymous Respondent</div>
                                   <div className="text-xs text-muted-foreground">
                                     Submitted on {formatDate(response.submittedAt)}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">
+                                    Respondent: {response.respondentENS || response.respondent}
                                   </div>
                                 </div>
                               </div>

@@ -7,12 +7,14 @@ import {
   disconnectWallet, 
   getConnectedWallet,
   getBalance,
-  getNetwork 
+  getNetwork, 
+  getENS
 } from '@/lib/wallet';
 
 const WalletConnect: React.FC = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState('');
+  const [ensName, setENSName] = useState<string | null>(null);
   const [walletBalance, setWalletBalance] = useState('');
   const [networkName, setNetworkName] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -25,7 +27,11 @@ const WalletConnect: React.FC = () => {
       setIsConnected(true);
       setWalletAddress(storedWallet);
       fetchWalletInfo(storedWallet);
+      getENS(storedWallet).then((ensName) => {
+        setENSName(ensName);
+      });
     }
+
 
     // Set up event listeners for wallet changes
     window.addEventListener('wallet_changed', handleWalletChanged);
@@ -48,6 +54,8 @@ const WalletConnect: React.FC = () => {
         title: "Wallet changed",
         description: "Your active wallet has changed.",
       });
+
+      window.location.reload();
     }
   };
 
@@ -202,7 +210,7 @@ const WalletConnect: React.FC = () => {
             whileTap={{ scale: 0.98 }}
           >
             <div className="w-3 h-3 bg-green-400 rounded-full mr-2 animate-pulse-subtle"></div>
-            <span>{formatAddress(walletAddress)}</span>
+            <span>{ensName ? ensName : formatAddress(walletAddress)}</span>
             <ChevronDown className={`w-4 h-4 ml-2 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
           </motion.button>
 

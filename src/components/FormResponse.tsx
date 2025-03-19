@@ -113,7 +113,7 @@ const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
       }
       
       // Submit the response with the wallet address
-      const response = submitResponse({
+      const response = await submitResponse({
         formId: form.id,
         respondent: walletAddress,
         answers: formattedAnswers,

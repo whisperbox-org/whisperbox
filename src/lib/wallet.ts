@@ -106,6 +106,26 @@ export const getBalance = async (address?: string): Promise<string> => {
   }
 };
 
+export const getENS = async (address?: string): Promise<string | null> => {
+  try {
+    const provider = await getProvider();
+    const walletAddress = address || getConnectedWallet(); 
+    console.log("Resolving ENS for wallet address: ", walletAddress)
+
+    if (!walletAddress) {
+      throw new Error('No wallet connected');
+    }
+
+    const ensName = await provider.lookupAddress(walletAddress);
+
+    return ensName;
+  } catch (error) {
+    console.error('Error getting ENS:', error);
+    throw new Error('Failed to get ENS for the wallet address');
+  }
+
+}
+
 /**
  * Check if an address owns a specific NFT
  * @param address wallet address to check
