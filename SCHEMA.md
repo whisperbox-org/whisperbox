@@ -12,9 +12,9 @@ In research, some responses are typically discarded (e.g., outliers). The protoc
 - **Respondent**: Receives survey notifications, submits encrypted responses.
 
 ### Protocol Flow:
-1. The Researcher posts a `SurveyCreate` message over Waku.
+1. The Researcher posts a `Survey` message over Waku.
 2. The Respondent:
-   - Decodes the `SurveyCreate` message.
+   - Decodes the `Survey` message.
    - Generates a `SurveyResponse`, encrypting responses with the survey's public key.
    - Posts the `SurveyResponse` to the Waku topic.
 3. The Researcher collects and aggregates responses.
@@ -27,39 +27,48 @@ There are three security modes:
 2. **Encrypted responses**: The survey is public, but responses are encrypted using the researcher's public key. Only the researcher can decrypt responses.
 3. **Encrypted and authenticated responses**: In addition to encryption, respondents include a proof of eligibility in their responses. This allows the researcher to limit participants, e.g., requiring a wallet in the response. Advanced setups may use zero-knowledge proofs of membership or signatures proving ownership of a token (NFT, Ordinal).
 
----
+### Protocol Schema
 
 ```proto
 syntax = "proto3";
 
-message SurveyCreate {
+enum QuestionType {
+    TEXT = 0;
+    SINGLE_CHOICE = 1;
+    MULTI_CHOICE = 2;
+}
+
+message Question {
+    uint32 question_index = 1;
+    QuestionType question_type = 2;
+    string question = 3;
+    repeated string question_options = 4;  // for choice-based questions
+}
+
+message Answer {
+    uint32 question_index = 1;
+    optional string answer_text = 2;  // for text-based questions
+    repeated uint32 answer_options = 3;  // for choice-based questions
+}
+
+message Survey {
     string survey_id = 1;
-    repeated FormQuestion survey_questions = 2;
+    repeated Question survey_questions = 2;
     bytes survey_pub_key = 3;
     optional string survey_eligibility_requirements = 4;
     optional uint64 survey_deadline = 5;
 }
 
-message FormQuestion {
-    enum SurveyQuestionType {
-        TEXT = 0;
-        SINGLE_CHOICE = 1;
-        MULTI_CHOICE = 2;
-    }
-    SurveyQuestionType question_type = 1;
-    string survey_question = 2;
-    repeated string survey_options = 3; // Optional
-}
-
 message SurveyResponse {
-    string response_id = 1;
-    bytes encrypted_survey_response_payload = 2;
+    string survey_id = 1;
+    repeated Answer survey_answers = 2;
+    optional bytes survey_eligibility_proof = 3; // ZKP, signature, etc.
 }
 
-message SurveyResponsePayload {
+message SurveyResponseEncrypted {
     string survey_id = 1;
-    bytes survey_response = 2;
-    optional bytes survey_eligibility_proof = 3; // ZKP, signature, etc.
+    bytes survey_response_encrypted = 2;
+    string encryption_scheme = 3;  // Optional: specify encryption method
 }
 
 message SurveyClose {
