@@ -1,11 +1,12 @@
 // This is a temporary in-memory store for demonstration purposes
 // In a real implementation, this would be stored encrypted and distributed
 
-import { FormType, FormQuestion, FormResponse, FormCreationParams, FormSubmissionParams } from '@/types/form';
+import { FormType, FormResponse, FormCreationParams, FormSubmissionParams } from '@/types/form';
+import { checkNFTOwnership } from './walletUtils';
 
 
 // In-memory store
-let forms = [];
+let forms: FormType[] = [];
 
 // Create a new form
 export const createForm = (form: FormCreationParams): FormType => {
@@ -85,9 +86,7 @@ export const canAccessForm = async (formId: string, userAddress: string): Promis
   
   // Check whitelist
   if (form.whitelist.type === 'nft') {
-    // In a real implementation, this would check NFT ownership
-    // For now, we'll use the mock functionality from walletUtils
-    const { checkNFTOwnership } = await import('./walletUtils');
+    // Use the imported checkNFTOwnership function directly
     return checkNFTOwnership(userAddress, form.whitelist.value);
   } else if (form.whitelist.type === 'addresses') {
     // Check if the address is in the whitelist
