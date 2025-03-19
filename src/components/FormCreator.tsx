@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Minus, Trash2, Save, HelpCircle, AlignLeft, CheckSquare, ListChecks, FileText } from 'lucide-react';
@@ -39,7 +38,7 @@ const FormCreator: React.FC = () => {
     ]);
   };
 
-  const updateQuestion = (index: number, field: keyof FormQuestion, value: any) => {
+  const updateQuestion = (index: number, field: keyof FormQuestion, value: string | boolean | string[]) => {
     const updatedQuestions = [...questions];
     updatedQuestions[index] = {
       ...updatedQuestions[index],
