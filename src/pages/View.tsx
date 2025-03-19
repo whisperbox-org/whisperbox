@@ -147,8 +147,8 @@ const View: React.FC = () => {
     );
   }
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+  const formatDate = (ts: number) => {
+    const date = new Date(ts);
     return date.toLocaleDateString('en-US', {
       month: 'long',
       day: 'numeric',

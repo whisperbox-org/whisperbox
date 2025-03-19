@@ -70,9 +70,9 @@ export const WakuContextProvider = ({ children, updateStatus }: Props) => {
             setStatus("starting")
             updateStatus("Starting Waku node", "info", 2000)
             await createLightNode({
-                //networkConfig: {clusterId: 42, shards: [0]},
-                defaultBootstrap: true,
-                //bootstrapPeers: BOOTSTRAP_NODES,
+                networkConfig: {clusterId: 42, shards: [0]},
+                defaultBootstrap: false,
+                bootstrapPeers: BOOTSTRAP_NODES,
                 numPeersToUse: 1,
                 
             }).then( async (ln: LightNode) => {
@@ -80,10 +80,7 @@ export const WakuContextProvider = ({ children, updateStatus }: Props) => {
                 setNode(ln)
                 setStatus("connecting")
 
-                ln.connectionManager.addEventListener(EConnectionStateEvents.CONNECTION_STATUS, (e) => {
-                    //console.log(e)
-                })
-
+            
                 
                 try {
                     updateStatus("Waiting for a peer", "success", 3000)

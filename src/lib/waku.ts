@@ -1,8 +1,8 @@
 import EventEmitter from "events"
 import getDispatcher, { destroyDispatcher, Dispatcher, DispatchMetadata, Signer} from "waku-dispatcher"
 import { createEncoder, IWaku, LightNode, Protocols, utf8ToBytes,  } from "@waku/sdk";
-import { addForm, createForm, getAllForms, getFormById } from "./formStore";
-import { FormType } from "@/types";
+import { addForm, createForm, getAllForms, getFormById, submitResponse } from "./formStore";
+import { FormSubmissionParams, FormType } from "@/types";
 
 
 export enum ClientState {
@@ -68,6 +68,7 @@ export class WakuClient extends EventEmitter {
             }
 
             this.dispatcher.on(MessageTypes.NEW_FORM, this.handleNewForm.bind(this))
+            this.dispatcher.on(MessageTypes.FORM_RESPONSE, this.handleResponse.bind(this))
 
             await this.dispatcher.start()
             try {
@@ -105,11 +106,29 @@ export class WakuClient extends EventEmitter {
         }
     }
 
+    private handleResponse(payload: FormSubmissionParams, signer: Signer, _3:DispatchMetadata): void {
+        console.log("Got a response for form: ", payload.formId, getFormById(payload.formId))
+        if(getFormById(payload.formId)) {
+            console.log("Adding response", payload)
+            submitResponse(payload)
+        }
+    }
+
     public async publishForm(form: FormType): Promise<boolean> {
         if (this.dispatcher == null) {
             throw new Error("Dispatcher is not initialized")
         }
         const result = await this.dispatcher.emit(MessageTypes.NEW_FORM, form)
+        return result != false
+    }
+
+    public async publishResponse(response: FormSubmissionParams): Promise<boolean> {
+        if (this.dispatcher == null) {
+            throw new Error("Dispatcher is not initialized")
+        }
+
+        console.log(response)
+        const result = await this.dispatcher.emit(MessageTypes.FORM_RESPONSE, response)
         return result != false
     }
 }

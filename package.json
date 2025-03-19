@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
+    "@libp2p/interface": "*",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
     "@radix-ui/react-aspect-ratio": "^1.1.0",
@@ -40,8 +41,9 @@
     "@radix-ui/react-toggle-group": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.1.4",
     "@tanstack/react-query": "^5.56.2",
-    "caniuse-lite": "^1.0.30001706",
     "@waku/sdk": "0.0.30-09108d9.0",
+    "caniuse-lite": "^1.0.30001706",
+
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
@@ -64,7 +66,7 @@
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.3",
-    "waku-dispatcher": "^0.0.19",
+    "waku-dispatcher": "0.0.20-dev",
     "zod": "^3.23.8"
   },
   "devDependencies": {

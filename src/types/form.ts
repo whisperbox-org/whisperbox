@@ -15,7 +15,7 @@ export interface FormType {
   title: string;
   description: string;
   creator: string;
-  createdAt: string;
+  createdAt: number;
   expiresAt?: string; // Optional expiry timestamp
   questions: FormQuestion[];
   whitelist: {
@@ -29,7 +29,7 @@ export interface FormResponse {
   id: string;
   formId: string;
   respondent: string; // Wallet address
-  submittedAt: string;
+  submittedAt: number;
   answers: {
     questionId: string;
     value: string | string[];
