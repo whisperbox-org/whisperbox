@@ -6,6 +6,8 @@ import Layout from '@/components/Layout';
 import FormCreator from '@/components/FormCreator';
 import { getConnectedWallet } from '@/lib/wallet';
 import AnimatedTransition from '@/components/AnimatedTransition';
+import { useWakuContext } from '@/hooks/useWaku';
+import { WakuClient } from '@/lib/waku';
 
 const Create: React.FC = () => {
   const navigate = useNavigate();
@@ -25,6 +27,7 @@ const Create: React.FC = () => {
       window.removeEventListener('storage', checkWallet);
     };
   }, []);
+
 
   if (!walletConnected) {
     return (

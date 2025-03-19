@@ -7,6 +7,7 @@ import { getConnectedWallet } from '@/lib/wallet';
 import { useNavigate } from 'react-router-dom';
 import { createForm } from '@/lib/formStore';
 import { FORM_CONFIG } from '@/config/form';
+import { useWakuContext } from '@/hooks/useWaku';
 
 const FormCreator: React.FC = () => {
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ const FormCreator: React.FC = () => {
   const [whitelistValue, setWhitelistValue] = useState(''); // Empty by default since Public Access is selected
   const [showHelp, setShowHelp] = useState(false);
   const [saving, setSaving] = useState(false);
+  const {client,connected} = useWakuContext()
 
   const addQuestion = () => {
     setQuestions([
@@ -95,6 +97,10 @@ const FormCreator: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!client || !connected) {
+      toast({title: "Waku client not initialized"})
+      return
+    }
     
     const walletAddress = getConnectedWallet();
     if (!walletAddress) {
@@ -179,7 +185,12 @@ const FormCreator: React.FC = () => {
       });
       
       // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      //await new Promise(resolve => setTimeout(resolve, 1500));
+      const result = await client.publishForm(newForm)
+      if (!result) {
+        throw new Error("Failed to publish new form")
+      }
+
       
       // Generate the shareable link
       const formLink = `${window.location.origin}/view/${newForm.id}`;

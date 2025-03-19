@@ -12,28 +12,35 @@ import Forms from "./pages/Forms";
 import Create from "./pages/Create";
 import View from "./pages/View";
 import NotFound from "./pages/NotFound";
+import { WakuContextProvider } from "./hooks/useWaku";
 
 const queryClient = new QueryClient();
 
+const status = (text:string, typ:string) => {
+  console.log(text) //use toast instead
+} 
+
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AnimatePresence mode="wait">
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/forms" element={<Forms />} />
-            <Route path="/create" element={<Create />} />
-            <Route path="/view/:id" element={<View />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AnimatePresence>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <WakuContextProvider updateStatus={status}>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AnimatePresence mode="wait">
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/forms" element={<Forms />} />
+              <Route path="/create" element={<Create />} />
+              <Route path="/view/:id" element={<View />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AnimatePresence>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </WakuContextProvider>
 );
 
 export default App;

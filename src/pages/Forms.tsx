@@ -8,15 +8,18 @@ import { FormType } from '@/types/form';
 import { getConnectedWallet } from '@/lib/wallet';
 import AnimatedTransition from '@/components/AnimatedTransition';
 import { getFormsByCreator } from '@/lib/formStore';
+import { useWakuContext } from '@/hooks/useWaku';
 
 const Forms: React.FC = () => {
   const [forms, setForms] = useState<FormType[]>([]);
   const [loading, setLoading] = useState(true);
   const [walletConnected, setWalletConnected] = useState(false);
+  const {client, connected} = useWakuContext()
 
   useEffect(() => {
     const loadForms = async () => {
       setLoading(true);
+      if (!connected || !client) return;
       
       const wallet = getConnectedWallet();
       if (wallet) {
@@ -42,7 +45,7 @@ const Forms: React.FC = () => {
       window.removeEventListener('wallet_changed', loadForms);
       window.removeEventListener('wallet_disconnected', loadForms);
     };
-  }, []);
+  }, [connected, client]);
 
   if (loading) {
     return (
