@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Send, Lock, AlertTriangle, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { FormType, submitResponse } from '@/lib/formStore';
+import { FormType } from '@/types/form';
 import { getConnectedWallet, signMessage } from '@/lib/walletUtils';
+import { submitResponse } from '@/lib/formStore';
 
 interface FormResponseProps {
   form: FormType;
