@@ -53,7 +53,7 @@ const FormCreator: React.FC = () => {
     
     // If changing type to multipleChoice or checkbox and no options exist, add some defaults
     if (field === 'type' && (value === 'multipleChoice' || value === 'checkbox') && (!updatedQuestions[index].options || updatedQuestions[index].options!.length === 0)) {
-      updatedQuestions[index].options = ['Option 1', 'Option 2'];
+      updatedQuestions[index].options = ['', ''];
     }
     
     setQuestions(updatedQuestions);
@@ -64,7 +64,7 @@ const FormCreator: React.FC = () => {
     const currentOptions = updatedQuestions[questionIndex].options || [];
     updatedQuestions[questionIndex].options = [
       ...currentOptions,
-      `Option ${currentOptions.length + 1}`,
+      ``,
     ];
     setQuestions(updatedQuestions);
   };
@@ -266,14 +266,6 @@ const FormCreator: React.FC = () => {
         <div>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">Questions</h2>
-            <button
-              type="button"
-              onClick={addQuestion}
-              className="flex items-center justify-center px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
-            >
-              <Plus className="w-4 h-4 mr-1" />
-              Add Question
-            </button>
           </div>
           
           {questions.map((question, index) => (
@@ -379,6 +371,16 @@ const FormCreator: React.FC = () => {
               </div>
             </motion.div>
           ))}
+        </div>
+        <div className='flex justify-end'>
+        <button
+              type="button"
+              onClick={addQuestion}
+              className="flex items-center justify-center px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Add Question
+            </button>
         </div>
         
         <div className="p-5 rounded-xl border border-border bg-background">
