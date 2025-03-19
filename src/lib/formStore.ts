@@ -21,6 +21,10 @@ export const createForm = (form: FormCreationParams): FormType => {
   return newForm;
 };
 
+export const addForm = (form: FormType) => {
+  forms = [...forms, form];
+}
+
 // Get all forms
 export const getAllForms = (): FormType[] => {
   return forms;

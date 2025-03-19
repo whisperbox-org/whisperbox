@@ -13,6 +13,8 @@ import { getConnectedWallet } from '@/lib/wallet';
 import AnimatedTransition from '@/components/AnimatedTransition';
 import { useToast } from '@/hooks/use-toast';
 import { FormType } from '@/types';
+import { useWakuContext } from '@/hooks/useWaku';
+import { ClientState } from '@/lib/waku';
 
 const View: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -26,10 +28,12 @@ const View: React.FC = () => {
   const [showResponses, setShowResponses] = useState(false);
   const [formUrl, setFormUrl] = useState('');
   const [copied, setCopied] = useState(false);
+  const {client, connected} = useWakuContext()
 
   useEffect(() => {
     const loadForm = async () => {
       setLoading(true);
+      if (!client || !connected) return
       
       if (!id) {
         navigate('/forms');
@@ -90,7 +94,7 @@ const View: React.FC = () => {
     };
     
     loadForm();
-  }, [id, navigate, toast]);
+  }, [id, navigate, toast, client, connected]);
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(formUrl);
