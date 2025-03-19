@@ -11,8 +11,8 @@ interface FormCardProps {
 
 const FormCard: React.FC<FormCardProps> = ({ form, delay = 0 }) => {
   // Format date to be more readable
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+  const formatDate = (ts : number) => {
+    const date = new Date(ts);
     return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -21,8 +21,8 @@ const FormCard: React.FC<FormCardProps> = ({ form, delay = 0 }) => {
   };
   
   // Calculate days ago
-  const calculateDaysAgo = (dateString: string) => {
-    const date = new Date(dateString);
+  const calculateDaysAgo = (ts: number) => {
+    const date = new Date(ts);
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - date.getTime());
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));

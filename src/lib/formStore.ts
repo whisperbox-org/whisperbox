@@ -4,18 +4,26 @@
 import { FormType, FormResponse, FormCreationParams, FormSubmissionParams } from '@/types/form';
 import { checkNFTOwnership } from './wallet';
 import { FORM_CONFIG } from '@/config/form';
+import { sha256 } from 'ethers';
+import { utf8ToBytes} from "@waku/sdk"
 
 // In-memory store
 let forms: FormType[] = [];
 
+export const formId = (form: FormType): string => {
+  return sha256(utf8ToBytes(form.title+form.creator+form.createdAt))
+}
 // Create a new form
 export const createForm = (form: FormCreationParams): FormType => {
+  const ts = Date.now()
   const newForm: FormType = {
     ...form,
-    id: `f${Date.now()}`,
-    createdAt: new Date().toISOString(),
+    id: "",
+    createdAt: ts,
     responses: [],
   };
+
+  newForm.id = formId(newForm);
   
   forms = [...forms, newForm];
   return newForm;
@@ -51,7 +59,7 @@ export const submitResponse = (response: FormSubmissionParams): FormResponse => 
   const newResponse: FormResponse = {
     ...response,
     id: `r${Date.now()}`,
-    submittedAt: new Date().toISOString(),
+    submittedAt: Date.now(),
   };
   
   // Add the response to the form

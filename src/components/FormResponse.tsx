@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Send, Lock, AlertTriangle, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { FormType } from '@/types/form';
+import { FormSubmissionParams, FormType } from '@/types/form';
 import { getConnectedWallet, signMessage } from '@/lib/wallet';
 import { submitResponse } from '@/lib/formStore';
+import { useWakuContext } from '@/hooks/useWaku';
 
 interface FormResponseProps {
   form: FormType;
@@ -13,6 +14,7 @@ interface FormResponseProps {
 
 const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
   const { toast } = useToast();
+  const { client, connected } = useWakuContext()
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -86,6 +88,15 @@ const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
       });
       return;
     }
+
+    if (!client || !connected) {
+      toast({
+        title: "Waku Client not connected",
+        description: "Please try again or reload the page",
+        variant: "destructive",
+      });
+      return;
+    }
     
     try {
       setSubmitting(true);
@@ -102,14 +113,16 @@ const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
       }
       
       // Submit the response with the wallet address
-      submitResponse({
+      const response = submitResponse({
         formId: form.id,
         respondent: walletAddress,
         answers: formattedAnswers,
       });
       
       // Simulate encryption and network delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      if (!await client.publishResponse(response)) {
+        throw new Error("Failed to publish response");
+      }
       
       toast({
         title: "Response submitted",
