@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, ShieldX, AlertTriangle, Loader } from 'lucide-react';
 import { checkNFTOwnership, getConnectedWallet } from '@/lib/wallet';
+import { UI_CONFIG } from '@/config/ui';
 
 interface NFTGateProps {
   children: React.ReactNode;
@@ -98,9 +99,9 @@ const NFTGate: React.FC<NFTGateProps> = ({
   
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
+      initial={UI_CONFIG.DEFAULT_ANIMATION.initial}
+      animate={UI_CONFIG.DEFAULT_ANIMATION.animate}
+      transition={UI_CONFIG.DEFAULT_ANIMATION.transition}
     >
       {children}
     </motion.div>

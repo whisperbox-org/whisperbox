@@ -3,7 +3,7 @@
 
 import { FormType, FormResponse, FormCreationParams, FormSubmissionParams } from '@/types/form';
 import { checkNFTOwnership } from './wallet';
-
+import { FORM_CONFIG } from '@/config/form';
 
 // In-memory store
 let forms: FormType[] = [];
@@ -80,15 +80,15 @@ export const canAccessForm = async (formId: string, userAddress: string): Promis
   }
   
   // If the form has no access control, anyone with a wallet can access it
-  if (form.whitelist.type === 'none') {
+  if (form.whitelist.type === FORM_CONFIG.WHITELIST_TYPES.NONE) {
     return true; // As long as they have a wallet (userAddress is checked above)
   }
   
   // Check whitelist
-  if (form.whitelist.type === 'nft') {
+  if (form.whitelist.type === FORM_CONFIG.WHITELIST_TYPES.NFT) {
     // Use the imported checkNFTOwnership function directly
     return checkNFTOwnership(userAddress, form.whitelist.value);
-  } else if (form.whitelist.type === 'addresses') {
+  } else if (form.whitelist.type === FORM_CONFIG.WHITELIST_TYPES.ADDRESSES) {
     // Check if the address is in the whitelist
     const whitelist = form.whitelist.value.split(',').map(addr => addr.trim().toLowerCase());
     return whitelist.includes(userAddress.toLowerCase());
@@ -107,7 +107,7 @@ export const hasResponded = (formId: string, userAddress: string | null): boolea
   
   // If it's a public form (no access control) and no wallet is connected,
   // we can't track if the user has already responded, so return false
-  if (form.whitelist.type === 'none' && !userAddress) {
+  if (form.whitelist.type === FORM_CONFIG.WHITELIST_TYPES.NONE && !userAddress) {
     return false;
   }
   

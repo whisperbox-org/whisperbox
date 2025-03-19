@@ -1,13 +1,6 @@
 import { ethers } from 'ethers';
-
-// Simple ERC-721 interface for NFT ownership check
-const ERC721_ABI = [
-  'function balanceOf(address owner) view returns (uint256)',
-  'function ownerOf(uint256 tokenId) view returns (address)',
-];
-
-// Storage key for session persistence
-const STORAGE_KEY = 'secureform-wallet';
+import { WALLET_CONFIG, WALLET_EVENT_NAMES } from '@/config/wallet';
+import { STORAGE_KEYS } from '@/config/storage';
 
 // Ethereum provider cache
 let _provider: ethers.BrowserProvider | null = null;
@@ -48,7 +41,7 @@ export const connectWallet = async (): Promise<string> => {
     const address = accounts[0];
     
     // Store in localStorage for persistence
-    localStorage.setItem(STORAGE_KEY, address);
+    localStorage.setItem(STORAGE_KEYS.WALLET, address);
     
     return address;
   } catch (error) {
@@ -62,7 +55,7 @@ export const connectWallet = async (): Promise<string> => {
  */
 export const disconnectWallet = async (): Promise<void> => {
   try {
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STORAGE_KEYS.WALLET);
     _provider = null;
   } catch (error) {
     console.error('Error disconnecting wallet:', error);
@@ -75,7 +68,7 @@ export const disconnectWallet = async (): Promise<void> => {
  * @returns wallet address or null if not connected
  */
 export const getConnectedWallet = (): string | null => {
-  return localStorage.getItem(STORAGE_KEY);
+  return localStorage.getItem(STORAGE_KEYS.WALLET);
 };
 
 /**
@@ -127,7 +120,7 @@ export const checkNFTOwnership = async (
 ): Promise<boolean> => {
   try {
     const provider = await getProvider();
-    const contract = new ethers.Contract(contractAddress, ERC721_ABI, provider);
+    const contract = new ethers.Contract(contractAddress, WALLET_CONFIG.ERC721_ABI, provider);
     
     if (tokenId !== undefined) {
       // Check if the address owns a specific token
@@ -190,17 +183,17 @@ if (typeof window !== 'undefined' && 'ethereum' in window && window.ethereum) {
   ethereum.on('accountsChanged', (accounts: string[]) => {
     if (accounts.length === 0) {
       // User disconnected their wallet
-      localStorage.removeItem(STORAGE_KEY);
-      window.dispatchEvent(new Event('wallet_disconnected'));
+      localStorage.removeItem(STORAGE_KEYS.WALLET);
+      window.dispatchEvent(new Event(WALLET_EVENT_NAMES.WALLET_DISCONNECTED));
     } else {
       // User switched accounts
-      localStorage.setItem(STORAGE_KEY, accounts[0]);
-      window.dispatchEvent(new Event('wallet_changed'));
+      localStorage.setItem(STORAGE_KEYS.WALLET, accounts[0]);
+      window.dispatchEvent(new Event(WALLET_EVENT_NAMES.WALLET_CHANGED));
     }
   });
   
   ethereum.on('chainChanged', (_chainId: string) => {
     // Network changed, refresh the page
-    window.dispatchEvent(new Event('network_changed'));
+    window.dispatchEvent(new Event(WALLET_EVENT_NAMES.NETWORK_CHANGED));
   });
 }

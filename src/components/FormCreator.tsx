@@ -6,6 +6,7 @@ import { FormQuestion } from '@/types/form';
 import { getConnectedWallet } from '@/lib/wallet';
 import { useNavigate } from 'react-router-dom';
 import { createForm } from '@/lib/formStore';
+import { FORM_CONFIG } from '@/config/form';
 
 const FormCreator: React.FC = () => {
   const navigate = useNavigate();
@@ -15,13 +16,11 @@ const FormCreator: React.FC = () => {
   const [questions, setQuestions] = useState<FormQuestion[]>([
     {
       id: `q-${Date.now()}`,
-      type: 'text',
+      ...FORM_CONFIG.DEFAULT_QUESTION,
       text: '',
-      required: true,
-      options: [],
     },
   ]);
-  const [whitelistType, setWhitelistType] = useState<'nft' | 'addresses' | 'none'>('none');
+  const [whitelistType, setWhitelistType] = useState<'nft' | 'addresses' | 'none'>(FORM_CONFIG.WHITELIST_TYPES.NONE);
   const [whitelistValue, setWhitelistValue] = useState(''); // Empty by default since Public Access is selected
   const [showHelp, setShowHelp] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -31,10 +30,8 @@ const FormCreator: React.FC = () => {
       ...questions,
       {
         id: `q-${Date.now()}-${questions.length}`,
-        type: 'text',
+        ...FORM_CONFIG.DEFAULT_QUESTION,
         text: '',
-        required: true,
-        options: [],
       },
     ]);
   };
@@ -47,12 +44,12 @@ const FormCreator: React.FC = () => {
     };
     
     // If changing type to text or textarea, remove options
-    if (field === 'type' && (value === 'text' || value === 'textarea')) {
+    if (field === 'type' && (value === FORM_CONFIG.QUESTION_TYPES.TEXT || value === FORM_CONFIG.QUESTION_TYPES.TEXTAREA)) {
       updatedQuestions[index].options = [];
     }
     
     // If changing type to multipleChoice or checkbox and no options exist, add some defaults
-    if (field === 'type' && (value === 'multipleChoice' || value === 'checkbox') && (!updatedQuestions[index].options || updatedQuestions[index].options!.length === 0)) {
+    if (field === 'type' && (value === FORM_CONFIG.QUESTION_TYPES.MULTIPLE_CHOICE || value === FORM_CONFIG.QUESTION_TYPES.CHECKBOX) && (!updatedQuestions[index].options || updatedQuestions[index].options!.length === 0)) {
       updatedQuestions[index].options = ['', ''];
     }
     
@@ -131,7 +128,7 @@ const FormCreator: React.FC = () => {
       }
       
       // Check if options exist and have at least 2 items for choice-based questions
-      if ((questions[i].type === 'multipleChoice' || questions[i].type === 'checkbox')) {
+      if ((questions[i].type === FORM_CONFIG.QUESTION_TYPES.MULTIPLE_CHOICE || questions[i].type === FORM_CONFIG.QUESTION_TYPES.CHECKBOX)) {
         const options = questions[i].options;
         if (!options || options.length < 2) {
           toast({
@@ -145,7 +142,7 @@ const FormCreator: React.FC = () => {
     }
     
     // Validate whitelist value for NFT and address types
-    if (whitelistType === 'nft' && !whitelistValue.trim()) {
+    if (whitelistType === FORM_CONFIG.WHITELIST_TYPES.NFT && !whitelistValue.trim()) {
       toast({
         title: "Missing NFT contract",
         description: "Please enter an NFT contract address.",
@@ -154,7 +151,7 @@ const FormCreator: React.FC = () => {
       return;
     }
     
-    if (whitelistType === 'addresses' && !whitelistValue.trim()) {
+    if (whitelistType === FORM_CONFIG.WHITELIST_TYPES.ADDRESSES && !whitelistValue.trim()) {
       toast({
         title: "Missing addresses",
         description: "Please enter at least one wallet address.",
@@ -167,7 +164,7 @@ const FormCreator: React.FC = () => {
       setSaving(true);
       
       // Create form with potentially empty whitelist value for 'none' type
-      const whitelistValueToUse = whitelistType === 'none' ? '' : whitelistValue;
+      const whitelistValueToUse = whitelistType === FORM_CONFIG.WHITELIST_TYPES.NONE ? '' : whitelistValue;
       
       // Create form
       const newForm = createForm({
@@ -226,13 +223,13 @@ const FormCreator: React.FC = () => {
 
   const getQuestionIcon = (type: string) => {
     switch (type) {
-      case 'text':
+      case FORM_CONFIG.QUESTION_TYPES.TEXT:
         return <FileText className="w-4 h-4" />;
-      case 'textarea':
+      case FORM_CONFIG.QUESTION_TYPES.TEXTAREA:
         return <AlignLeft className="w-4 h-4" />;
-      case 'multipleChoice':
+      case FORM_CONFIG.QUESTION_TYPES.MULTIPLE_CHOICE:
         return <ListChecks className="w-4 h-4" />;
-      case 'checkbox':
+      case FORM_CONFIG.QUESTION_TYPES.CHECKBOX:
         return <CheckSquare className="w-4 h-4" />;
       default:
         return <FileText className="w-4 h-4" />;
@@ -343,10 +340,10 @@ const FormCreator: React.FC = () => {
                         onChange={(e) => updateQuestion(index, 'type', e.target.value)}
                         className="text-sm bg-secondary/50 border-0 rounded-md px-2 py-1"
                       >
-                        <option value="text">Short Text</option>
-                        <option value="textarea">Paragraph</option>
-                        <option value="multipleChoice">Multiple Choice</option>
-                        <option value="checkbox">Checkboxes</option>
+                        <option value={FORM_CONFIG.QUESTION_TYPES.TEXT}>Short Text</option>
+                        <option value={FORM_CONFIG.QUESTION_TYPES.TEXTAREA}>Paragraph</option>
+                        <option value={FORM_CONFIG.QUESTION_TYPES.MULTIPLE_CHOICE}>Multiple Choice</option>
+                        <option value={FORM_CONFIG.QUESTION_TYPES.CHECKBOX}>Checkboxes</option>
                       </select>
                     </div>
                   </div>
@@ -371,12 +368,12 @@ const FormCreator: React.FC = () => {
                 />
               </div>
               
-              {(question.type === 'multipleChoice' || question.type === 'checkbox') && (
+              {(question.type === FORM_CONFIG.QUESTION_TYPES.MULTIPLE_CHOICE || question.type === FORM_CONFIG.QUESTION_TYPES.CHECKBOX) && (
                 <div className="space-y-2 ml-2">
                   {question.options?.map((option, optionIndex) => (
                     <div key={`${question.id}-option-${optionIndex}`} className="flex items-center">
                       <div className="w-5 mr-2 flex justify-center">
-                        {question.type === 'multipleChoice' ? (
+                        {question.type === FORM_CONFIG.QUESTION_TYPES.MULTIPLE_CHOICE ? (
                           <span className="w-3.5 h-3.5 rounded-full border border-muted-foreground/40 inline-block" />
                         ) : (
                           <span className="w-3.5 h-3.5 rounded-sm border border-muted-foreground/40 inline-block" />
@@ -445,8 +442,8 @@ const FormCreator: React.FC = () => {
                 <input
                   type="radio"
                   name="whitelistType"
-                  checked={whitelistType === 'none'}
-                  onChange={() => setWhitelistType('none')}
+                  checked={whitelistType === FORM_CONFIG.WHITELIST_TYPES.NONE}
+                  onChange={() => setWhitelistType(FORM_CONFIG.WHITELIST_TYPES.NONE)}
                   className="mr-2"
                 />
                 <div className="flex items-center">
@@ -459,8 +456,8 @@ const FormCreator: React.FC = () => {
                 <input
                   type="radio"
                   name="whitelistType"
-                  checked={whitelistType === 'nft'}
-                  onChange={() => setWhitelistType('nft')}
+                  checked={whitelistType === FORM_CONFIG.WHITELIST_TYPES.NFT}
+                  onChange={() => setWhitelistType(FORM_CONFIG.WHITELIST_TYPES.NFT)}
                   className="mr-2"
                 />
                 <div className="flex items-center">
@@ -473,8 +470,8 @@ const FormCreator: React.FC = () => {
                 <input
                   type="radio"
                   name="whitelistType"
-                  checked={whitelistType === 'addresses'}
-                  onChange={() => setWhitelistType('addresses')}
+                  checked={whitelistType === FORM_CONFIG.WHITELIST_TYPES.ADDRESSES}
+                  onChange={() => setWhitelistType(FORM_CONFIG.WHITELIST_TYPES.ADDRESSES)}
                   className="mr-2"
                 />
                 <div className="flex items-center">
@@ -484,7 +481,7 @@ const FormCreator: React.FC = () => {
               </label>
             </div>
             
-            {whitelistType === 'nft' ? (
+            {whitelistType === FORM_CONFIG.WHITELIST_TYPES.NFT ? (
               <div>
                 <label htmlFor="nftContract" className="block text-sm font-medium mb-1">
                   NFT Contract Address
@@ -501,7 +498,7 @@ const FormCreator: React.FC = () => {
                   Only wallets that own an NFT from this contract will be able to access and submit the form.
                 </p>
               </div>
-            ) : whitelistType === 'addresses' ? (
+            ) : whitelistType === FORM_CONFIG.WHITELIST_TYPES.ADDRESSES ? (
               <div>
                 <label htmlFor="addresses" className="block text-sm font-medium mb-1">
                   Whitelisted Addresses
