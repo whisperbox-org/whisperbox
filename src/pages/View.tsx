@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Shield, Clock, User, ClipboardList, Eye, EyeOff, Copy, Check } from 'lucide-react';
+import { ArrowLeft, Shield, Clock, User, ClipboardList, Eye, EyeOff, Copy, Check, Globe } from 'lucide-react';
 import Layout from '@/components/Layout';
 import FormResponse from '@/components/FormResponse';
 import NFTGate from '@/components/NFTGate';
@@ -52,12 +51,29 @@ const View: React.FC = () => {
       setFormUrl(`${window.location.origin}/view/${id}`);
       
       const wallet = getConnectedWallet();
-      if (wallet) {
-        // Check if the current user is the creator
-        const creator = foundForm.creator.toLowerCase() === wallet.toLowerCase();
-        setIsCreator(creator);
+      
+      // If the form has no access control, grant access immediately
+      if (foundForm.whitelist.type === 'none') {
+        // Only grant access if wallet is connected
+        if (wallet) {
+          setHasAccess(true);
+          
+          // Check if user has already responded
+          const responded = hasResponded(id, wallet);
+          setHasAlreadyResponded(responded);
+        } else {
+          setHasAccess(false);
+        }
         
-        if (creator) {
+        setLoading(false);
+      }
+      
+      if (wallet) {
+        // Simple and direct creator check - just normalize addresses
+        const isCreator = foundForm.creator.toLowerCase() === wallet.toLowerCase();
+        setIsCreator(isCreator);
+        
+        if (isCreator) {
           setHasAccess(true);
         } else {
           // Check if user has access to the form
@@ -191,22 +207,47 @@ const View: React.FC = () => {
                   {form.responses.length} responses
                 </div>
                 
-                <div className="flex items-center text-sm">
-                  <Shield className="w-4 h-4 mr-1.5 text-green-500" />
-                  <span className="text-green-600 font-medium">End-to-end encrypted</span>
-                </div>
+                {form.whitelist.type === 'none' ? (
+                  <div className="flex items-center text-sm">
+                    <Globe className="w-4 h-4 mr-1.5 text-blue-500" />
+                    <span className="text-blue-600 font-medium">Public Access</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center text-sm">
+                    <Shield className="w-4 h-4 mr-1.5 text-green-500" />
+                    <span className="text-green-600 font-medium">End-to-end encrypted</span>
+                  </div>
+                )}
               </div>
             </div>
           </AnimatedTransition>
           
+          {/* Floating share button for creators */}
+          {isCreator && (
+            <div className="fixed bottom-8 right-8 z-10">
+              <div className="relative group">
+                <button
+                  onClick={handleCopyLink}
+                  className="flex items-center justify-center w-12 h-12 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary-hover transition-all"
+                  aria-label="Copy form link"
+                >
+                  {copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
+                </button>
+                <span className="absolute -top-10 left-1/2 transform -translate-x-1/2 whitespace-nowrap bg-background border border-border px-3 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  {copied ? 'Copied!' : 'Copy form link'}
+                </span>
+              </div>
+            </div>
+          )}
+          
           {isCreator ? (
             <AnimatedTransition delay={0.2}>
               <div className="mb-8">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-semibold">Creator Dashboard</h2>
                   <button
                     onClick={() => setShowResponses(!showResponses)}
-                    className="flex items-center px-3 py-1.5 text-sm rounded-lg bg-secondary"
+                    className="flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                   >
                     {showResponses ? (
                       <>
@@ -216,14 +257,27 @@ const View: React.FC = () => {
                     ) : (
                       <>
                         <Eye className="w-4 h-4 mr-1.5" />
-                        View Responses
+                        View Responses ({form.responses.length})
                       </>
                     )}
                   </button>
                 </div>
                 
+                {/* Always show a prompt when responses exist but aren't being viewed */}
+                {!showResponses && form.responses.length > 0 && (
+                  <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 mb-4">
+                    <div className="flex items-center">
+                      <ClipboardList className="w-5 h-5 text-primary mr-2" />
+                      <p className="text-sm">
+                        <span className="font-medium">You have {form.responses.length} {form.responses.length === 1 ? 'response' : 'responses'}</span>. 
+                        Click the "View Responses" button above to see the submissions.
+                      </p>
+                    </div>
+                  </div>
+                )}
+                
                 {showResponses && (
-                  <div className="mt-6 space-y-4">
+                  <div className="mt-2 space-y-4">
                     {form.responses.length === 0 ? (
                       <div className="text-center p-8 border border-border rounded-lg">
                         <ClipboardList className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
@@ -302,8 +356,48 @@ const View: React.FC = () => {
                     </>
                   )}
                 </NFTGate>
+              ) : form.whitelist.type === 'addresses' ? (
+                // Handle address-based access control
+                <>
+                  {hasAccess ? (
+                    <>
+                      {hasAlreadyResponded ? (
+                        <div className="text-center p-8 border border-border rounded-lg">
+                          <Check className="w-12 h-12 text-green-500 mx-auto mb-4" />
+                          <h3 className="text-xl font-medium mb-2">Thank You!</h3>
+                          <p className="text-muted-foreground max-w-md mx-auto">
+                            You have already submitted a response to this form. Multiple submissions are not allowed.
+                          </p>
+                        </div>
+                      ) : (
+                        <FormResponse form={form} />
+                      )}
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center p-8 bg-background border border-border rounded-xl shadow-sm">
+                      <Shield className="w-10 h-10 text-amber-500 mb-4" />
+                      <h3 className="text-xl font-medium mb-2">Access Restricted</h3>
+                      <p className="text-muted-foreground text-center mb-4">
+                        This form is restricted to specific wallet addresses. Please connect your wallet to verify access.
+                      </p>
+                    </div>
+                  )}
+                </>
               ) : (
-                <>{/* Handle address-based access control */}</>
+                // No access control - anyone with a connected wallet can view and submit
+                <div>
+                  {!getConnectedWallet() ? (
+                    <div className="flex flex-col items-center justify-center p-8 bg-background border border-border rounded-xl shadow-sm">
+                      <Shield className="w-10 h-10 text-amber-500 mb-4" />
+                      <h3 className="text-xl font-medium mb-2">Wallet Connection Required</h3>
+                      <p className="text-muted-foreground text-center mb-4">
+                        Please connect your wallet to view and submit this form.
+                      </p>
+                    </div>
+                  ) : (
+                    <FormResponse form={form} />
+                  )}
+                </div>
               )}
             </AnimatedTransition>
           )}

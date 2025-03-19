@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Send, Lock, AlertTriangle } from 'lucide-react';
+import { Send, Lock, AlertTriangle, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { FormType, submitResponse } from '@/lib/formStore';
 import { getConnectedWallet, signMessage } from '@/lib/walletUtils';
@@ -76,6 +75,7 @@ const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
       return;
     }
     
+    // Always require wallet connection for all forms
     const walletAddress = getConnectedWallet();
     if (!walletAddress) {
       toast({
@@ -95,10 +95,12 @@ const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
         value,
       }));
       
-      // Sign message for authentication
-      await signMessage("Submit form response");
+      // For non-public forms, sign message for authentication
+      if (form.whitelist.type !== 'none') {
+        await signMessage("Submit form response");
+      }
       
-      // Submit the response
+      // Submit the response with the wallet address
       submitResponse({
         formId: form.id,
         respondent: walletAddress,
@@ -140,11 +142,18 @@ const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
         className="text-center py-10"
       >
         <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-          <Lock className="w-8 h-8 text-primary" />
+          {form.whitelist.type === 'none' ? (
+            <Check className="w-8 h-8 text-primary" />
+          ) : (
+            <Lock className="w-8 h-8 text-primary" />
+          )}
         </div>
         <h2 className="text-2xl font-bold mb-2">Response Submitted</h2>
         <p className="text-muted-foreground max-w-md mx-auto">
-          Your response has been encrypted and securely submitted. Only the form creator will be able to decrypt and view your responses.
+          {form.whitelist.type === 'none' 
+            ? "Your response has been successfully submitted. Thank you for your participation!"
+            : "Your response has been encrypted and securely submitted. Only the form creator will be able to decrypt and view your responses."
+          }
         </p>
       </motion.div>
     );
@@ -156,7 +165,10 @@ const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
         <AlertTriangle className="w-5 h-5 text-amber-500 mr-3 mt-0.5" />
         <div>
           <p className="text-sm">
-            All responses are end-to-end encrypted and can only be viewed by the form creator. Your data will not be stored on any centralized server.
+            {form.whitelist.type === 'none' 
+              ? "This is a public form. While wallet connection is required, no additional verification will be performed."
+              : "All responses are end-to-end encrypted and can only be viewed by the form creator. Your data will not be stored on any centralized server."
+            }
           </p>
         </div>
       </div>
@@ -255,7 +267,7 @@ const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              Encrypting & Submitting...
+              {form.whitelist.type === 'none' ? 'Submitting...' : 'Encrypting & Submitting...'}
             </>
           ) : (
             <>

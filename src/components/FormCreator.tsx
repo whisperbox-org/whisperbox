@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Minus, Trash2, Save, HelpCircle, AlignLeft, CheckSquare, ListChecks, FileText } from 'lucide-react';
+import { Plus, Minus, Trash2, Save, HelpCircle, AlignLeft, CheckSquare, ListChecks, FileText, Globe, Shield, Users, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { createForm, FormQuestion } from '@/lib/formStore';
 import { getConnectedWallet } from '@/lib/walletUtils';
@@ -20,8 +20,8 @@ const FormCreator: React.FC = () => {
       options: [],
     },
   ]);
-  const [whitelistType, setWhitelistType] = useState<'nft' | 'addresses'>('nft');
-  const [whitelistValue, setWhitelistValue] = useState('0x1234567890123456789012345678901234567890'); // Default NFT contract
+  const [whitelistType, setWhitelistType] = useState<'nft' | 'addresses' | 'none'>('none');
+  const [whitelistValue, setWhitelistValue] = useState(''); // Empty by default since Public Access is selected
   const [showHelp, setShowHelp] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -140,8 +140,30 @@ const FormCreator: React.FC = () => {
       }
     }
     
+    // Validate whitelist value for NFT and address types
+    if (whitelistType === 'nft' && !whitelistValue.trim()) {
+      toast({
+        title: "Missing NFT contract",
+        description: "Please enter an NFT contract address.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (whitelistType === 'addresses' && !whitelistValue.trim()) {
+      toast({
+        title: "Missing addresses",
+        description: "Please enter at least one wallet address.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       setSaving(true);
+      
+      // Create form with potentially empty whitelist value for 'none' type
+      const whitelistValueToUse = whitelistType === 'none' ? '' : whitelistValue;
       
       // Create form
       const newForm = createForm({
@@ -151,16 +173,38 @@ const FormCreator: React.FC = () => {
         questions,
         whitelist: {
           type: whitelistType,
-          value: whitelistValue,
+          value: whitelistValueToUse,
         },
       });
       
       // Simulate network delay
       await new Promise(resolve => setTimeout(resolve, 1500));
       
+      // Generate the shareable link
+      const formLink = `${window.location.origin}/view/${newForm.id}`;
+      
+      // Show success toast with copy button
       toast({
         title: "Form created",
-        description: "Your form has been created successfully!",
+        description: (
+          <div className="flex flex-col space-y-2">
+            <p>Your form has been created successfully!</p>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(formLink);
+                toast({
+                  title: "Link copied",
+                  description: "Form link copied to clipboard",
+                });
+              }}
+              className="flex items-center mt-2 px-3 py-1.5 bg-secondary rounded-lg text-xs font-medium"
+            >
+              <Copy className="w-3.5 h-3.5 mr-1.5" />
+              Copy Form Link
+            </button>
+          </div>
+        ),
+        duration: 5000, // Show longer to give time to copy
       });
       
       navigate(`/view/${newForm.id}`);
@@ -221,11 +265,17 @@ const FormCreator: React.FC = () => {
             <ol className="list-decimal ml-4 space-y-1">
               <li>Provide a descriptive title and optional description</li>
               <li>Add your questions (text, paragraph, multiple choice, or checkboxes)</li>
-              <li>Set access permissions (NFT ownership or specific addresses)</li>
-              <li>Save your form to generate a unique, encrypted link</li>
+              <li>Set access permissions:
+                <ul className="list-disc ml-6 mt-1 space-y-1 text-xs">
+                  <li><strong>Public Access</strong> (Default) - Any connected wallet can access (no NFT/address verification)</li>
+                  <li><strong>NFT Ownership</strong> - Only wallets that own specific NFTs can access</li>
+                  <li><strong>Specific Addresses</strong> - Only whitelisted wallet addresses can access</li>
+                </ul>
+              </li>
+              <li>Save your form to generate a unique link</li>
             </ol>
             <p className="mt-2 text-xs text-muted-foreground">
-              All responses will be end-to-end encrypted and accessible only to you.
+              For NFT and address-restricted forms, responses are end-to-end encrypted and accessible only to you.
             </p>
           </motion.div>
         )}
@@ -386,7 +436,21 @@ const FormCreator: React.FC = () => {
           <h2 className="text-lg font-semibold mb-4">Access Control</h2>
           
           <div className="space-y-4">
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-wrap items-center gap-4">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="whitelistType"
+                  checked={whitelistType === 'none'}
+                  onChange={() => setWhitelistType('none')}
+                  className="mr-2"
+                />
+                <div className="flex items-center">
+                  <Globe className="w-4 h-4 mr-1.5 text-primary" />
+                  Public Access
+                </div>
+              </label>
+              
               <label className="flex items-center">
                 <input
                   type="radio"
@@ -395,7 +459,10 @@ const FormCreator: React.FC = () => {
                   onChange={() => setWhitelistType('nft')}
                   className="mr-2"
                 />
-                NFT Ownership
+                <div className="flex items-center">
+                  <Shield className="w-4 h-4 mr-1.5 text-primary" />
+                  NFT Ownership
+                </div>
               </label>
               
               <label className="flex items-center">
@@ -406,7 +473,10 @@ const FormCreator: React.FC = () => {
                   onChange={() => setWhitelistType('addresses')}
                   className="mr-2"
                 />
-                Specific Addresses
+                <div className="flex items-center">
+                  <Users className="w-4 h-4 mr-1.5 text-primary" />
+                  Specific Addresses
+                </div>
               </label>
             </div>
             
@@ -420,14 +490,14 @@ const FormCreator: React.FC = () => {
                   id="nftContract"
                   value={whitelistValue}
                   onChange={(e) => setWhitelistValue(e.target.value)}
-                  placeholder="0x..."
+                  placeholder="Enter NFT contract address (e.g. 0x123...)"
                   className="w-full px-4 py-2 rounded-lg border border-border bg-background form-input-focus"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   Only wallets that own an NFT from this contract will be able to access and submit the form.
                 </p>
               </div>
-            ) : (
+            ) : whitelistType === 'addresses' ? (
               <div>
                 <label htmlFor="addresses" className="block text-sm font-medium mb-1">
                   Whitelisted Addresses
@@ -442,6 +512,19 @@ const FormCreator: React.FC = () => {
                 <p className="text-xs text-muted-foreground mt-1">
                   Enter comma-separated wallet addresses that should have access to this form.
                 </p>
+              </div>
+            ) : (
+              <div className="p-4 rounded-lg bg-blue-50/30 border border-blue-100">
+                <div className="flex items-start">
+                  <Globe className="w-5 h-5 text-blue-600 mr-2 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="font-medium text-blue-900 mb-1">Public Access Selected (Default)</h3>
+                    <p className="text-sm text-blue-800">
+                      Anyone with a connected wallet will be able to access this form.
+                      No NFT ownership or address verification will be performed.
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
           </div>
