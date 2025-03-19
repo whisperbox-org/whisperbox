@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Shield, ShieldCheck, ShieldX, AlertTriangle, Loader } from 'lucide-react';
-import { checkNFTOwnership, getConnectedWallet } from '@/lib/walletUtils';
+import { Shield, ShieldX, AlertTriangle, Loader } from 'lucide-react';
+import { checkNFTOwnership, getConnectedWallet } from '@/lib/wallet';
 
 interface NFTGateProps {
   children: React.ReactNode;

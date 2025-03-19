@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Send, Lock, AlertTriangle, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { FormType } from '@/types/form';
-import { getConnectedWallet, signMessage } from '@/lib/walletUtils';
+import { getConnectedWallet, signMessage } from '@/lib/wallet';
 import { submitResponse } from '@/lib/formStore';
 
 interface FormResponseProps {

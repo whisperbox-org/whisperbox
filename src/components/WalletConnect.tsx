@@ -8,7 +8,7 @@ import {
   getConnectedWallet,
   getBalance,
   getNetwork 
-} from '@/lib/walletUtils';
+} from '@/lib/wallet';
 
 const WalletConnect: React.FC = () => {
   const [isConnected, setIsConnected] = useState(false);

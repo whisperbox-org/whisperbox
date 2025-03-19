@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Lock } from 'lucide-react';
 import Layout from '@/components/Layout';
 import FormCreator from '@/components/FormCreator';
-import { getConnectedWallet } from '@/lib/walletUtils';
+import { getConnectedWallet } from '@/lib/wallet';
 import AnimatedTransition from '@/components/AnimatedTransition';
 
 const Create: React.FC = () => {

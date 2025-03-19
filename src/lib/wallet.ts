@@ -20,9 +20,9 @@ let _provider: ethers.BrowserProvider | null = null;
 const getProvider = async (): Promise<ethers.BrowserProvider> => {
   if (!_provider) {
     // Check if ethereum object is available
-    if (typeof window !== 'undefined' && 'ethereum' in window) {
-      // Use type assertion as ethers expects a valid provider
-      _provider = new ethers.BrowserProvider(window.ethereum as any);
+    if (typeof window !== 'undefined' && 'ethereum' in window && window.ethereum) {
+      // Use the typed ethereum provider
+      _provider = new ethers.BrowserProvider(window.ethereum as ethers.Eip1193Provider);
     } else {
       throw new Error('No Ethereum provider found. Please install MetaMask or another wallet.');
     }
@@ -184,8 +184,8 @@ export const isWhitelisted = async (
 };
 
 // Set up wallet event listeners
-if (typeof window !== 'undefined' && 'ethereum' in window) {
-  const ethereum = window.ethereum as any;
+if (typeof window !== 'undefined' && 'ethereum' in window && window.ethereum) {
+  const ethereum = window.ethereum;
   
   ethereum.on('accountsChanged', (accounts: string[]) => {
     if (accounts.length === 0) {

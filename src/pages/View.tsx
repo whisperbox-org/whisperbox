@@ -5,14 +5,14 @@ import Layout from '@/components/Layout';
 import FormResponse from '@/components/FormResponse';
 import NFTGate from '@/components/NFTGate';
 import { 
-  FormType, 
   getFormById, 
   canAccessForm, 
   hasResponded 
 } from '@/lib/formStore';
-import { getConnectedWallet } from '@/lib/walletUtils';
+import { getConnectedWallet } from '@/lib/wallet';
 import AnimatedTransition from '@/components/AnimatedTransition';
 import { useToast } from '@/hooks/use-toast';
+import { FormType } from '@/types';
 
 const View: React.FC = () => {
   const { id } = useParams<{ id: string }>();

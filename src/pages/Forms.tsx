@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import FormCard from '@/components/FormCard';
 import { FormType } from '@/types/form';
-import { getConnectedWallet } from '@/lib/walletUtils';
+import { getConnectedWallet } from '@/lib/wallet';
 import AnimatedTransition from '@/components/AnimatedTransition';
 import { getFormsByCreator } from '@/lib/formStore';
 

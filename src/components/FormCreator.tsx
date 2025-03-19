@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Minus, Trash2, Save, HelpCircle, AlignLeft, CheckSquare, ListChecks, FileText, Globe, Shield, Users, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { FormQuestion } from '@/types/form';
-import { getConnectedWallet } from '@/lib/walletUtils';
+import { getConnectedWallet } from '@/lib/wallet';
 import { useNavigate } from 'react-router-dom';
 import { createForm } from '@/lib/formStore';
 

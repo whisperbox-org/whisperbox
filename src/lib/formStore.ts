@@ -2,7 +2,7 @@
 // In a real implementation, this would be stored encrypted and distributed
 
 import { FormType, FormResponse, FormCreationParams, FormSubmissionParams } from '@/types/form';
-import { checkNFTOwnership } from './walletUtils';
+import { checkNFTOwnership } from './wallet';
 
 
 // In-memory store

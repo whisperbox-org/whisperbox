@@ -7,9 +7,17 @@ import { ethers } from 'ethers';
 // Define window Ethereum provider interface
 export interface EthereumProvider extends ethers.Eip1193Provider {
   isMetaMask?: boolean;
+  selectedAddress?: string;
+  isConnected?(): boolean;
+  chainId?: string;
   request: (request: { method: string; params?: Array<unknown> }) => Promise<unknown>;
-  on: (event: string, listener: (...args: unknown[]) => void) => void;
-  removeListener: (event: string, listener: (...args: unknown[]) => void) => void;
+  
+  // Typed event handlers
+  on(event: 'accountsChanged', listener: (accounts: string[]) => void): void;
+  on(event: 'chainChanged', listener: (chainId: string) => void): void;
+  on(event: string, listener: (...args: unknown[]) => void): void;
+  
+  removeListener(event: string, listener: (...args: unknown[]) => void): void;
 }
 
 // Extend the Window interface to include ethereum
