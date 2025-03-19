@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CalendarClock, ChevronRight, FileText, Users } from 'lucide-react';
-import { FormType } from '@/lib/formStore';
+import { FormType } from '@/types/form';
 
 interface FormCardProps {
   form: FormType;

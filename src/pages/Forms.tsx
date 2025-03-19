@@ -4,9 +4,10 @@ import { PlusCircle, FileQuestion, Loader, Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import FormCard from '@/components/FormCard';
-import { FormType, getFormsByCreator } from '@/lib/formStore';
+import { FormType } from '@/types/form';
 import { getConnectedWallet } from '@/lib/walletUtils';
 import AnimatedTransition from '@/components/AnimatedTransition';
+import { getFormsByCreator } from '@/lib/formStore';
 
 const Forms: React.FC = () => {
   const [forms, setForms] = useState<FormType[]>([]);
