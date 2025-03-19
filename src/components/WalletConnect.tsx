@@ -1,13 +1,20 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wallet, ChevronDown, Check, Copy, ExternalLink, LogOut } from 'lucide-react';
+import { Wallet, ChevronDown, Check, Copy, ExternalLink, LogOut, NetworkIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { connectWallet, disconnectWallet, getConnectedWallet } from '@/lib/walletUtils';
+import { 
+  connectWallet, 
+  disconnectWallet, 
+  getConnectedWallet,
+  getBalance,
+  getNetwork 
+} from '@/lib/walletUtils';
 
 const WalletConnect: React.FC = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState('');
+  const [walletBalance, setWalletBalance] = useState('');
+  const [networkName, setNetworkName] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [connectingStatus, setConnectingStatus] = useState<'idle' | 'connecting' | 'success'>('idle');
   const { toast } = useToast();
@@ -17,19 +24,88 @@ const WalletConnect: React.FC = () => {
     if (storedWallet) {
       setIsConnected(true);
       setWalletAddress(storedWallet);
+      fetchWalletInfo(storedWallet);
     }
+
+    // Set up event listeners for wallet changes
+    window.addEventListener('wallet_changed', handleWalletChanged);
+    window.addEventListener('wallet_disconnected', handleWalletDisconnected);
+    window.addEventListener('network_changed', handleNetworkChanged);
+
+    return () => {
+      window.removeEventListener('wallet_changed', handleWalletChanged);
+      window.removeEventListener('wallet_disconnected', handleWalletDisconnected);
+      window.removeEventListener('network_changed', handleNetworkChanged);
+    };
   }, []);
+
+  const handleWalletChanged = () => {
+    const address = getConnectedWallet();
+    if (address) {
+      setWalletAddress(address);
+      fetchWalletInfo(address);
+      toast({
+        title: "Wallet changed",
+        description: "Your active wallet has changed.",
+      });
+    }
+  };
+
+  const handleWalletDisconnected = () => {
+    setIsConnected(false);
+    setWalletAddress('');
+    setWalletBalance('');
+    toast({
+      title: "Wallet disconnected",
+      description: "Your wallet has been disconnected.",
+    });
+  };
+
+  const handleNetworkChanged = async () => {
+    if (isConnected) {
+      try {
+        const network = await getNetwork();
+        setNetworkName(network.name === 'homestead' ? 'Ethereum' : network.name);
+        // Refresh balance as it might change with network
+        if (walletAddress) {
+          const balance = await getBalance(walletAddress);
+          setWalletBalance(balance);
+        }
+        toast({
+          title: "Network changed",
+          description: `You are now connected to ${network.name === 'homestead' ? 'Ethereum' : network.name}.`,
+        });
+      } catch (error) {
+        console.error('Error handling network change:', error);
+      }
+    }
+  };
+
+  const fetchWalletInfo = async (address: string) => {
+    try {
+      // Get wallet balance
+      const balance = await getBalance(address);
+      setWalletBalance(balance);
+      
+      // Get network info
+      const network = await getNetwork();
+      setNetworkName(network.name === 'homestead' ? 'Ethereum' : network.name);
+    } catch (error) {
+      console.error('Error fetching wallet info:', error);
+    }
+  };
 
   const handleConnect = async () => {
     try {
       setConnectingStatus('connecting');
-      // Simulate wallet connection delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
       
       const address = await connectWallet();
       setWalletAddress(address);
       setIsConnected(true);
       setConnectingStatus('success');
+      
+      // Fetch additional wallet info
+      await fetchWalletInfo(address);
       
       toast({
         title: "Wallet connected",
@@ -46,7 +122,7 @@ const WalletConnect: React.FC = () => {
       
       toast({
         title: "Connection failed",
-        description: "Could not connect to your wallet. Please try again.",
+        description: error instanceof Error ? error.message : "Could not connect to your wallet. Please try again.",
         variant: "destructive",
       });
     }
@@ -57,6 +133,7 @@ const WalletConnect: React.FC = () => {
       await disconnectWallet();
       setIsConnected(false);
       setWalletAddress('');
+      setWalletBalance('');
       setIsDropdownOpen(false);
       
       toast({
@@ -141,6 +218,19 @@ const WalletConnect: React.FC = () => {
                 <div className="p-3 border-b border-border">
                   <div className="text-xs font-medium text-muted-foreground mb-1">Connected Wallet</div>
                   <div className="font-medium truncate">{formatAddress(walletAddress)}</div>
+                  
+                  {walletBalance && (
+                    <div className="text-sm text-muted-foreground mt-2">
+                      Balance: {parseFloat(walletBalance).toFixed(4)} ETH
+                    </div>
+                  )}
+                  
+                  {networkName && (
+                    <div className="flex items-center text-xs text-muted-foreground mt-2">
+                      <div className="w-2 h-2 bg-green-400 rounded-full mr-1"></div>
+                      {networkName}
+                    </div>
+                  )}
                 </div>
                 <div className="p-1">
                   <button

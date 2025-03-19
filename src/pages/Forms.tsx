@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { PlusCircle, FileQuestion, Loader, Lock } from 'lucide-react';
@@ -22,9 +21,7 @@ const Forms: React.FC = () => {
       if (wallet) {
         setWalletConnected(true);
         
-        // Simulate loading delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
+        // Get the user's forms
         const userForms = getFormsByCreator(wallet);
         setForms(userForms);
       } else {
@@ -35,6 +32,15 @@ const Forms: React.FC = () => {
     };
     
     loadForms();
+
+    // Add event listener for wallet changes
+    window.addEventListener('wallet_changed', loadForms);
+    window.addEventListener('wallet_disconnected', loadForms);
+
+    return () => {
+      window.removeEventListener('wallet_changed', loadForms);
+      window.removeEventListener('wallet_disconnected', loadForms);
+    };
   }, []);
 
   if (loading) {

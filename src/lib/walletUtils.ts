@@ -1,91 +1,206 @@
+import { ethers } from 'ethers';
 
-// This is a mock implementation for the wallet functionality
-// In a real implementation, this would use web3.js, ethers.js, or other Web3 libraries
-
-// Sample addresses for demo
-const SAMPLE_ADDRESSES = [
-  '0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
-  '0x7cB57B5A97eAbe94205C07890BE4c1aD31E486A8',
-  '0x2546BcD3c84621e976D8185a91A922aE77ECEc30',
-  '0xbDA5747bFD65F08deb54cb465eB87D40e51B197E',
+// Simple ERC-721 interface for NFT ownership check
+const ERC721_ABI = [
+  'function balanceOf(address owner) view returns (uint256)',
+  'function ownerOf(uint256 tokenId) view returns (address)',
 ];
 
-// NFT ownership status for the sample addresses
-const NFT_OWNERSHIP: Record<string, boolean> = {
-  '0x71C7656EC7ab88b098defB751B7401B5f6d8976F': true,
-  '0x7cB57B5A97eAbe94205C07890BE4c1aD31E486A8': true,
-  '0x2546BcD3c84621e976D8185a91A922aE77ECEc30': false,
-  '0xbDA5747bFD65F08deb54cb465eB87D40e51B197E': false,
-};
-
-// Store wallet connection
+// Storage key for session persistence
 const STORAGE_KEY = 'secureform-wallet';
 
-export const connectWallet = async (): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    try {
-      // Simulate random wallet selection
-      const randomIndex = Math.floor(Math.random() * SAMPLE_ADDRESSES.length);
-      const selectedAddress = SAMPLE_ADDRESSES[randomIndex];
-      
-      // Store in localStorage for persistence
-      localStorage.setItem(STORAGE_KEY, selectedAddress);
-      
-      // Simulate network delay
-      setTimeout(() => {
-        resolve(selectedAddress);
-      }, 500);
-    } catch (error) {
-      reject(new Error('Failed to connect wallet'));
+// Ethereum provider cache
+let _provider: ethers.BrowserProvider | null = null;
+
+/**
+ * Get the Ethereum provider
+ * @returns ethers.BrowserProvider if available
+ * @throws Error if no provider is available
+ */
+const getProvider = async (): Promise<ethers.BrowserProvider> => {
+  if (!_provider) {
+    // Check if ethereum object is available
+    if (typeof window !== 'undefined' && 'ethereum' in window) {
+      // Use type assertion as ethers expects a valid provider
+      _provider = new ethers.BrowserProvider(window.ethereum as any);
+    } else {
+      throw new Error('No Ethereum provider found. Please install MetaMask or another wallet.');
     }
-  });
+  }
+  return _provider;
 };
 
+/**
+ * Connect to a wallet provider
+ * @returns connected wallet address
+ */
+export const connectWallet = async (): Promise<string> => {
+  try {
+    const provider = await getProvider();
+    
+    // Request account access
+    const accounts = await provider.send('eth_requestAccounts', []);
+    
+    if (accounts.length === 0) {
+      throw new Error('No accounts found or user rejected the connection');
+    }
+    
+    const address = accounts[0];
+    
+    // Store in localStorage for persistence
+    localStorage.setItem(STORAGE_KEY, address);
+    
+    return address;
+  } catch (error) {
+    console.error('Error connecting wallet:', error);
+    throw new Error(error instanceof Error ? error.message : 'Failed to connect wallet');
+  }
+};
+
+/**
+ * Disconnect the wallet
+ */
 export const disconnectWallet = async (): Promise<void> => {
-  return new Promise((resolve) => {
+  try {
     localStorage.removeItem(STORAGE_KEY);
-    resolve();
-  });
+    _provider = null;
+  } catch (error) {
+    console.error('Error disconnecting wallet:', error);
+    throw new Error('Failed to disconnect wallet');
+  }
 };
 
+/**
+ * Get the currently connected wallet address
+ * @returns wallet address or null if not connected
+ */
 export const getConnectedWallet = (): string | null => {
   return localStorage.getItem(STORAGE_KEY);
 };
 
-export const checkNFTOwnership = async (address: string): Promise<boolean> => {
-  return new Promise((resolve) => {
-    // Simulate network delay
-    setTimeout(() => {
-      // Check if this address owns the required NFT
-      resolve(NFT_OWNERSHIP[address] || false);
-    }, 800);
-  });
-};
-
-export const signMessage = async (message: string): Promise<string> => {
-  const address = getConnectedWallet();
-  if (!address) {
-    throw new Error('No wallet connected');
+/**
+ * Get the network the wallet is connected to
+ * @returns network information
+ */
+export const getNetwork = async (): Promise<ethers.Network> => {
+  try {
+    const provider = await getProvider();
+    return provider.getNetwork();
+  } catch (error) {
+    console.error('Error getting network:', error);
+    throw new Error('Failed to get network information');
   }
-  
-  // In a real implementation, this would call the wallet to sign the message
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      // Mock signature
-      const signature = `0x${Array(130)
-        .fill(0)
-        .map(() => Math.floor(Math.random() * 16).toString(16))
-        .join('')}`;
-      resolve(signature);
-    }, 500);
-  });
 };
 
-// Verify if a user is whitelisted
+/**
+ * Get the balance of the connected wallet
+ * @returns balance in ETH
+ */
+export const getBalance = async (address?: string): Promise<string> => {
+  try {
+    const provider = await getProvider();
+    const walletAddress = address || getConnectedWallet();
+    
+    if (!walletAddress) {
+      throw new Error('No wallet connected');
+    }
+    
+    const balance = await provider.getBalance(walletAddress);
+    return ethers.formatEther(balance);
+  } catch (error) {
+    console.error('Error getting balance:', error);
+    throw new Error('Failed to get wallet balance');
+  }
+};
+
+/**
+ * Check if an address owns a specific NFT
+ * @param address wallet address to check
+ * @param contractAddress NFT contract address
+ * @param tokenId optional specific token ID to check
+ * @returns true if the address owns the NFT
+ */
+export const checkNFTOwnership = async (
+  address: string,
+  contractAddress: string,
+  tokenId?: number
+): Promise<boolean> => {
+  try {
+    const provider = await getProvider();
+    const contract = new ethers.Contract(contractAddress, ERC721_ABI, provider);
+    
+    if (tokenId !== undefined) {
+      // Check if the address owns a specific token
+      try {
+        const owner = await contract.ownerOf(tokenId);
+        return owner.toLowerCase() === address.toLowerCase();
+      } catch {
+        return false;
+      }
+    } else {
+      // Check if the address owns any tokens from this collection
+      const balance = await contract.balanceOf(address);
+      return Number(balance) > 0;
+    }
+  } catch (error) {
+    console.error('Error checking NFT ownership:', error);
+    return false;
+  }
+};
+
+/**
+ * Sign a message with the connected wallet
+ * @param message message to sign
+ * @returns signature
+ */
+export const signMessage = async (message: string): Promise<string> => {
+  try {
+    const provider = await getProvider();
+    const address = getConnectedWallet();
+    
+    if (!address) {
+      throw new Error('No wallet connected');
+    }
+    
+    const signer = await provider.getSigner();
+    return signer.signMessage(message);
+  } catch (error) {
+    console.error('Error signing message:', error);
+    throw new Error('Failed to sign message');
+  }
+};
+
+/**
+ * Verify if a user is whitelisted for a form
+ * @param address wallet address
+ * @param nftContract NFT contract address for verification
+ * @returns true if the user is whitelisted
+ */
 export const isWhitelisted = async (
   address: string, 
-  formId: string
+  nftContract: string
 ): Promise<boolean> => {
-  // In this mock, we just check for NFT ownership
-  return checkNFTOwnership(address);
+  return checkNFTOwnership(address, nftContract);
 };
+
+// Set up wallet event listeners
+if (typeof window !== 'undefined' && 'ethereum' in window) {
+  const ethereum = window.ethereum as any;
+  
+  ethereum.on('accountsChanged', (accounts: string[]) => {
+    if (accounts.length === 0) {
+      // User disconnected their wallet
+      localStorage.removeItem(STORAGE_KEY);
+      window.dispatchEvent(new Event('wallet_disconnected'));
+    } else {
+      // User switched accounts
+      localStorage.setItem(STORAGE_KEY, accounts[0]);
+      window.dispatchEvent(new Event('wallet_changed'));
+    }
+  });
+  
+  ethereum.on('chainChanged', (_chainId: string) => {
+    // Network changed, refresh the page
+    window.dispatchEvent(new Event('network_changed'));
+  });
+}
