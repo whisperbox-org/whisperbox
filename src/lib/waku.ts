@@ -1,7 +1,7 @@
 import EventEmitter from "events"
-import getDispatcher, { destroyDispatcher, Dispatcher, DispatchMetadata, Signer} from "waku-dispatcher"
-import { createEncoder, IWaku, LightNode, Protocols, utf8ToBytes,  } from "@waku/sdk";
-import { addForm, createForm, getAllForms, getFormById, submitResponse } from "./formStore";
+import getDispatcher, { Dispatcher, DispatchMetadata, Signer} from "waku-dispatcher"
+import {  IWaku, Protocols  } from "@waku/sdk";
+import { addForm,  getAllForms, getFormById, submitResponse } from "./formStore";
 import { FormSubmissionParams, FormType } from "@/types";
 
 
@@ -12,7 +12,8 @@ export enum ClientState {
 }
 
 export enum ClientEvents {
-    STATE_UPDATE = "state_update"
+    STATE_UPDATE = "state_update",
+    NEW_RESPONSE = "new_response"
 }
 
 export enum MessageTypes {
@@ -108,9 +109,16 @@ export class WakuClient extends EventEmitter {
 
     private handleResponse(payload: FormSubmissionParams, signer: Signer, _3:DispatchMetadata): void {
         console.log("Got a response for form: ", payload.formId, getFormById(payload.formId))
-        if(getFormById(payload.formId)) {
+        const form = getFormById(payload.formId);
+        if(form) {
             console.log("Adding response", payload)
-            submitResponse(payload)
+            try {
+                const response = submitResponse(payload);
+                // Emit an event with the response and form data for notifications
+                this.emit(ClientEvents.NEW_RESPONSE, { form, response: payload });
+            } catch (error) {
+                console.error("Error submitting response:", error);
+            }
         }
     }
 
