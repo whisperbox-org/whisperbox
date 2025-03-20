@@ -18,7 +18,7 @@ export interface FormType {
   publicKey: string;
   privateKey: string;
   createdAt: number;
-  expiresAt?: string; // Optional expiry timestamp
+  expiresAt?: number; // Optional expiry timestamp
   questions: FormQuestion[];
   whitelist: {
     type: 'nft' | 'addresses' | 'none';
@@ -38,7 +38,7 @@ export interface FormResponse {
   signature: string;
   answers: {
     questionId: string;
-    value: string | string[];
+    value: string | number | number[];
   }[];
   confirmationId: string | null;
 }
