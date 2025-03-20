@@ -197,7 +197,7 @@ export const persistFormPrivateKey = (formId: string, privateKey: string): void 
 }
 
 export const loadFormPrivateKey = (formId: string): string => {
-    let formKeys:FormKeys[] = JSON.parse(localStorage.getItem(storageKey) || "[]")
+    const formKeys:FormKeys[] = JSON.parse(localStorage.getItem(storageKey) || "[]")
     
     const formIndex = formKeys.findIndex(f => f.id == formId)
 
@@ -224,7 +224,7 @@ export const persistResponse = (response: FormSubmissionParams): void =>  {
 }
 
 export const loadResponse = (formId: string): FormSubmissionParams | undefined => {
-  let responses:FormSubmissionParams[] = JSON.parse(localStorage.getItem(responseKey) || "[]")
+  const responses:FormSubmissionParams[] = JSON.parse(localStorage.getItem(responseKey) || "[]")
   
   const formIndex = responses.findIndex(f => f.formId == formId)
 
@@ -241,8 +241,8 @@ export function toHexString(byteArray: Uint8Array) {
   }).join('');
 }
 export function toByteArray(hexString: string) {
-  var result = [];
-  for (var i = 0; i < hexString.length; i += 2) {
+  const result = [];
+  for (let i = 0; i < hexString.length; i += 2) {
     result.push(parseInt(hexString.substr(i, 2), 16));
   }
   return result;
