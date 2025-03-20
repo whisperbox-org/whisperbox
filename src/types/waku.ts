@@ -1,3 +1,3 @@
-export interface ResponseType {
-    payload: string;
+export interface EncryptedFormSubmissionParams {
+    encryptedPayload: string;
 }

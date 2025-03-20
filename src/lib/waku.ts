@@ -1,11 +1,11 @@
 import EventEmitter from "events"
-import getDispatcher, { destroyDispatcher, Dispatcher, DispatchMetadata, Key, KeyType, Signer} from "waku-dispatcher"
-import { bytesToUtf8, createEncoder, IWaku, LightNode, Protocols, utf8ToBytes,  } from "@waku/sdk";
-import { addConfirmation, addForm, createForm, getAllForms, getFormById, getFormsByCreator, submitResponse, toByteArray, toHexString } from "./formStore";
+import getDispatcher, { Dispatcher} from "waku-dispatcher"
+import { bytesToUtf8,  IWaku, LightNode, Protocols, utf8ToBytes,  } from "@waku/sdk";
+import { addConfirmation, addForm, getAllForms, getFormById, getFormsByCreator, submitResponse, toByteArray, toHexString } from "./formStore";
 import { FormSubmissionParams, FormType, ResponseConfirmation } from "@/types";
-import { utils } from "@noble/secp256k1"
-import { ResponseType } from "@/types/waku";
+import { EncryptedFormSubmissionParams } from "@/types/waku";
 import { decryptAsymmetric, encryptAsymmetric } from "@waku/message-encryption/ecies";
+import { CONTENT_TOPIC } from "@/config/waku";
 
 
 
@@ -26,7 +26,6 @@ export enum MessageTypes {
     CONFIRMATION_RESPONSE = "confirmation_response"
 }
 
-const CONTENT_TOPIX = "/whisperbox/1/all/json"
 
 export class WakuClient extends EventEmitter {
 
@@ -54,7 +53,7 @@ export class WakuClient extends EventEmitter {
         try {
             await this.node!.waitForPeers([Protocols.Filter, Protocols.LightPush, Protocols.Store]);
             if(!this.dispatcher) {
-                const disp = await getDispatcher(this.node as any, CONTENT_TOPIX, "whisperbox", false, false)
+                const disp = await getDispatcher(this.node as LightNode, CONTENT_TOPIC, "whisperbox", false, false)
                 if (!disp) {
                     throw new Error("Failed to initialize Waku Dispatcher")
                 }
@@ -112,7 +111,7 @@ export class WakuClient extends EventEmitter {
         this.address = address
     }
 
-    private handleNewForm(payload: FormType, signer: Signer, _3:DispatchMetadata): void {
+    private handleNewForm(payload: FormType): void {
         const form = getFormById(payload.id)
 
         if(!form) {
@@ -120,14 +119,14 @@ export class WakuClient extends EventEmitter {
         }
     }
 
-    private async handleResponse(payload: FormSubmissionParams | ResponseType, signer: Signer, _3:DispatchMetadata): Promise<void> {
+    private async handleResponse(payload: EncryptedFormSubmissionParams): Promise<void> {
         let response: FormSubmissionParams  | null = null
-        if ((payload as ResponseType).payload) {
+        if ((payload as EncryptedFormSubmissionParams).encryptedPayload) {
             const forms = getFormsByCreator(this.address!)
             for (const form of forms) {
                 if (!form.privateKey) continue
                 try {
-                    const data = await decryptAsymmetric(new Uint8Array(toByteArray((payload as ResponseType).payload)), new Uint8Array(toByteArray(form.privateKey)))
+                    const data = await decryptAsymmetric(new Uint8Array(toByteArray((payload as EncryptedFormSubmissionParams).encryptedPayload)), new Uint8Array(toByteArray(form.privateKey)))
                     response = JSON.parse(bytesToUtf8(data)) as FormSubmissionParams
                 } catch (e) {
                     console.log(e)
@@ -135,7 +134,7 @@ export class WakuClient extends EventEmitter {
             }
 
         } else {
-            response = payload as FormSubmissionParams
+            throw new Error("Invalid payload - this shouldn't happen -- all responses being handled should be encrypted")
         }
 
         if (!response) {
@@ -153,7 +152,7 @@ export class WakuClient extends EventEmitter {
         }
     }
 
-    private handleConfirmation(payload: ResponseConfirmation, signer: Signer, _3:DispatchMetadata): void {
+    private handleConfirmation(payload: ResponseConfirmation): void {
         const form = getFormById(payload.formId)
 
         if(form) {
@@ -185,7 +184,7 @@ export class WakuClient extends EventEmitter {
 
         const encrypted = await encryptAsymmetric(utf8ToBytes(JSON.stringify(response)), new Uint8Array(toByteArray(form.publicKey)))
 
-        const result = await this.dispatcher.emit(MessageTypes.FORM_RESPONSE, {payload: toHexString(encrypted)} as ResponseType)
+        const result = await this.dispatcher.emit(MessageTypes.FORM_RESPONSE, {encryptedPayload: toHexString(encrypted)} as EncryptedFormSubmissionParams)
         return result != false
     }
 
