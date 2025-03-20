@@ -4,7 +4,7 @@
 
 export interface FormQuestion {
   id: string;
-  type: 'text' | 'textarea' | 'multipleChoice' | 'checkbox';
+  type: 'text' | 'textarea' | 'singleChoice' | 'multipleChoice';
   text: string;
   required: boolean;
   options?: string[]; // For multiple choice or checkbox
@@ -16,7 +16,7 @@ export interface FormType {
   description: string;
   creator: string;
   createdAt: number;
-  expiresAt?: string; // Optional expiry timestamp
+  expiresAt?: number; // Optional expiry timestamp
   questions: FormQuestion[];
   whitelist: {
     type: 'nft' | 'addresses' | 'none';
@@ -33,7 +33,7 @@ export interface FormResponse {
   submittedAt: number;
   answers: {
     questionId: string;
-    value: string | string[];
+    value: string | number | number[];
   }[];
 }
 
