@@ -208,7 +208,7 @@ const View: React.FC = () => {
                 
                 <div className="flex items-center text-sm text-muted-foreground">
                   <User className="w-4 h-4 mr-1.5" />
-                  {form.responses.length} responses
+                  {form.confirmations.length} responses
                 </div>
                 
                 {form.whitelist.type === 'none' ? (
