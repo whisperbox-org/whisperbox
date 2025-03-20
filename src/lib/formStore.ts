@@ -2,7 +2,7 @@
 // In a real implementation, this would be stored encrypted and distributed
 
 import { FormType, FormResponse, FormCreationParams, FormSubmissionParams } from '@/types/form';
-import { checkNFTOwnership } from './wallet';
+import { checkNFTOwnership, getENS } from './wallet';
 import { FORM_CONFIG } from '@/config/form';
 import { sha256 } from 'ethers';
 import { utf8ToBytes} from "@waku/sdk"
@@ -49,19 +49,32 @@ export const getFormById = (id: string): FormType | undefined => {
 };
 
 // Submit a response to a form
-export const submitResponse = (response: FormSubmissionParams): FormResponse => {
+export const submitResponse = async (response: FormSubmissionParams): Promise<FormResponse> => {
   const formIndex = forms.findIndex(form => form.id === response.formId);
   
   if (formIndex === -1) {
     throw new Error('Form not found');
+  }
+
+  if (!response.respondent) {
+    throw new Error('Respondent address is required');
+  }
+
+  if(!await canAccessForm(response.formId, response.respondent)) {
+    throw new Error('Respondent is not allowed to respond');
   }
   
   const newResponse: FormResponse = {
     ...response,
     id: `r${Date.now()}`,
     submittedAt: Date.now(),
+    respondentENS: await getENS(response.respondent),
   };
   
+  if (forms[formIndex].responses.findIndex(r => r.respondent.toLowerCase() == response.respondent.toLowerCase()) != -1) {
+    throw new Error('Response already exists for this respondent');
+  }
+
   // Add the response to the form
   forms[formIndex].responses.push(newResponse);
   
