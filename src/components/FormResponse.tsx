@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Send, Lock, AlertTriangle, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { FormSubmissionParams, FormType } from '@/types/form';
 import { getConnectedWallet, signMessage } from '@/lib/wallet';
-import { submitResponse } from '@/lib/formStore';
+import { loadResponse, submitResponse, toHexString } from '@/lib/formStore';
 import { useWakuContext } from '@/hooks/useWaku';
+import { randomBytes } from 'ethers';
+
 
 interface FormResponseProps {
   form: FormType;
@@ -19,6 +21,15 @@ const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    if (form) {
+      const response = loadResponse(form.id)
+      if (response) {
+        setSubmitted(true)
+      }
+    }
+  },[form])
 
   const handleInputChange = (questionId: string, value: string | string[]) => {
     setAnswers({
@@ -117,6 +128,8 @@ const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
         formId: form.id,
         respondent: walletAddress,
         answers: formattedAnswers,
+        submittedAt: Date.now(),
+        confirmationId: toHexString(randomBytes(32)),
       });
       
       // Simulate encryption and network delay

@@ -12,6 +12,7 @@ import {
     Protocols
 } from "@waku/interfaces"
 import { WakuClient } from "@/lib/waku";
+import { getConnectedWallet } from "@/lib/wallet";
 
 export type WakuInfo = {
     client: WakuClient | undefined
@@ -61,11 +62,13 @@ export const WakuContextProvider = ({ children, updateStatus }: Props) => {
     const [node, setNode] = useState<LightNode>()
     const [health, setHealth] = useState<HealthStatus>(HealthStatus.Unhealthy)
     const [ client, setClient ] = useState<WakuClient | undefined>(undefined)
+    const address = getConnectedWallet();
+
 
 
     useEffect(() => {
         (async () => {
-            if (connected || connecting || node) return
+            if (connected || connecting || node || !address) return
             setConnecting(true)
             setStatus("starting")
             updateStatus("Starting Waku node", "info", 2000)
@@ -91,6 +94,7 @@ export const WakuContextProvider = ({ children, updateStatus }: Props) => {
                         })
 
                     const c = new WakuClient(ln);
+                    c.setAddress(address)
                     await c.init()
                     setClient(c)
                     setStatus("connected")
