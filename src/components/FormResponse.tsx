@@ -4,7 +4,7 @@ import { Send, Lock, AlertTriangle, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { FormSubmissionParams, FormType } from '@/types/form';
 import { getConnectedWallet, signMessage } from '@/lib/wallet';
-import { loadResponse, submitResponse, toHexString } from '@/lib/formStore';
+import { loadResponse, submitAndPersistResponse, submitResponse, toHexString } from '@/lib/formStore';
 import { useWakuContext } from '@/hooks/useWaku';
 import { randomBytes } from 'ethers';
 
@@ -124,7 +124,7 @@ const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
       }
       
       // Submit the response with the wallet address
-      const response = await submitResponse({
+      const response = await submitAndPersistResponse({
         formId: form.id,
         respondent: walletAddress,
         answers: formattedAnswers,

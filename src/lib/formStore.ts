@@ -108,13 +108,20 @@ export const submitResponse = async (response: FormSubmissionParams): Promise<Fo
     throw new Error('Response already exists for this respondent');
   }
 
-  persistResponse(newResponse)
 
   // Add the response to the form
   forms[formIndex].responses.push(newResponse);
   
   return newResponse;
 };
+
+export const submitAndPersistResponse = async (response: FormSubmissionParams): Promise<FormResponse> => {
+  const newResponse = await submitResponse(response)
+
+  persistResponse(newResponse)
+
+  return newResponse
+}
 
 // Delete a form
 export const deleteForm = (id: string): void => {
