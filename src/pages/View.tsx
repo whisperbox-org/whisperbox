@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Shield, Clock, User, ClipboardList, Eye, EyeOff, Copy, Check, Globe } from 'lucide-react';
+import { ArrowLeft, Shield, Clock, User, ClipboardList, Eye, EyeOff, Copy, Check, Globe, LayoutGrid, Table } from 'lucide-react';
 import Layout from '@/components/Layout';
 import FormResponse from '@/components/FormResponse';
 import NFTGate from '@/components/NFTGate';
@@ -9,12 +9,11 @@ import {
   canAccessForm, 
   hasResponded 
 } from '@/lib/formStore';
-import { getConnectedWallet, getENS } from '@/lib/wallet';
+import { getConnectedWallet } from '@/lib/wallet';
 import AnimatedTransition from '@/components/AnimatedTransition';
 import { useToast } from '@/hooks/use-toast';
 import { FormType } from '@/types';
 import { useWakuContext } from '@/hooks/useWaku';
-import { ClientState } from '@/lib/waku';
 
 const View: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -26,6 +25,7 @@ const View: React.FC = () => {
   const [hasAlreadyResponded, setHasAlreadyResponded] = useState(false);
   const [isCreator, setIsCreator] = useState(false);
   const [showResponses, setShowResponses] = useState(false);
+  const [viewType, setViewType] = useState<'card' | 'table'>('card');
   const [formUrl, setFormUrl] = useState('');
   const [copied, setCopied] = useState(false);
   const {client, connected} = useWakuContext()
@@ -249,22 +249,50 @@ const View: React.FC = () => {
               <div className="mb-8">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-semibold">Creator Dashboard</h2>
-                  <button
-                    onClick={() => setShowResponses(!showResponses)}
-                    className="flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-                  >
-                    {showResponses ? (
-                      <>
-                        <EyeOff className="w-4 h-4 mr-1.5" />
-                        Hide Responses
-                      </>
-                    ) : (
-                      <>
-                        <Eye className="w-4 h-4 mr-1.5" />
-                        View Responses ({form.responses.length})
-                      </>
+                  <div className="flex items-center gap-2">
+                    {showResponses && form.responses.length > 0 && (
+                      <div className="flex border border-border rounded-lg overflow-hidden">
+                        <button
+                          onClick={() => setViewType('card')}
+                          className={`flex items-center px-3 py-1.5 text-sm font-medium transition-colors ${
+                            viewType === 'card' 
+                              ? 'bg-primary text-primary-foreground' 
+                              : 'bg-background hover:bg-secondary/50'
+                          }`}
+                          aria-label="Card view"
+                        >
+                          <LayoutGrid className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => setViewType('table')}
+                          className={`flex items-center px-3 py-1.5 text-sm font-medium transition-colors ${
+                            viewType === 'table' 
+                              ? 'bg-primary text-primary-foreground' 
+                              : 'bg-background hover:bg-secondary/50'
+                          }`}
+                          aria-label="Table view"
+                        >
+                          <Table className="w-4 h-4" />
+                        </button>
+                      </div>
                     )}
-                  </button>
+                    <button
+                      onClick={() => setShowResponses(!showResponses)}
+                      className="flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                    >
+                      {showResponses ? (
+                        <>
+                          <EyeOff className="w-4 h-4 mr-1.5" />
+                          Hide Responses
+                        </>
+                      ) : (
+                        <>
+                          <Eye className="w-4 h-4 mr-1.5" />
+                          View Responses ({form.responses.length})
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
                 
                 {/* Always show a prompt when responses exist but aren't being viewed */}
@@ -290,7 +318,7 @@ const View: React.FC = () => {
                           Responses will appear here when participants complete your form.
                         </p>
                       </div>
-                    ) : (
+                    ) : viewType === 'card' ? (
                       <div className="space-y-4">
                         {form.responses.map((response, index) => (
                           <div 
@@ -337,6 +365,56 @@ const View: React.FC = () => {
                             </div>
                           </div>
                         ))}
+                      </div>
+                    ) : (
+                      <div className="border border-border rounded-lg overflow-hidden">
+                        <div className="overflow-x-auto">
+                          <table className="w-full">
+                            <thead className="bg-secondary/50">
+                              <tr>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">#</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Respondent</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Date</th>
+                                {form.questions.map(question => (
+                                  <th key={question.id} className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                    {question.text}
+                                  </th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-border">
+                              {form.responses.map((response, index) => (
+                                <tr key={response.id}>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm">{index + 1}</td>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm">
+                                    {response.respondentENS || response.respondent.substring(0, 6) + '...' + response.respondent.substring(response.respondent.length - 4)}
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm">{formatDate(response.submittedAt)}</td>
+                                  {form.questions.map(question => {
+                                    const answer = response.answers.find(a => a.questionId === question.id);
+                                    return (
+                                      <td key={question.id} className="px-4 py-3 text-sm">
+                                        {answer ? (
+                                          Array.isArray(answer.value) ? (
+                                            <div className="max-w-xs">
+                                              {answer.value.join(', ')}
+                                            </div>
+                                          ) : (
+                                            <div className="max-w-xs">
+                                              {answer.value}
+                                            </div>
+                                          )
+                                        ) : (
+                                          <span className="text-muted-foreground italic">No answer</span>
+                                        )}
+                                      </td>
+                                    );
+                                  })}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
                     )}
                   </div>
