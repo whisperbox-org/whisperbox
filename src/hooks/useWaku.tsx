@@ -87,6 +87,7 @@ export const WakuContextProvider = ({ children, updateStatus }: Props) => {
                 
                 try {
                     updateStatus("Waiting for a peer", "success", 3000)
+                    await ln.waitForPeers([Protocols.LightPush, Protocols.Filter, Protocols.Store])
                     updateStatus("Waku node successfully connected", "success", 5000)
                     console.log(await ln.libp2p.peerStore.all())
                     ln.health.addEventListener(HealthStatusChangeEvents.StatusChange, (hs) => {
