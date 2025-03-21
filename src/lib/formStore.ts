@@ -1,8 +1,8 @@
 // This is a temporary in-memory store for demonstration purposes
 // In a real implementation, this would be stored encrypted and distributed
 
-import { FormType, FormResponse, FormCreationParams, FormSubmissionParams, FormKeys } from '@/types/form';
-import { checkNFTOwnership, getENS } from './wallet';
+import { FormType, FormResponse, FormCreationParams, FormSubmissionParams, StoredForm, StoredFormType } from '@/types/form';
+import { checkNFTOwnership, getConnectedWallet, getENS } from './wallet';
 import { FORM_CONFIG } from '@/config/form';
 import { sha256 } from 'ethers';
 import { bytesToUtf8, utf8ToBytes} from "@waku/sdk"
@@ -32,25 +32,33 @@ export const createForm = (form: FormCreationParams): FormType => {
   };
 
   newForm.id = formId(newForm);
-  persistFormPrivateKey(newForm.id, newForm.privateKey)
+  storeForm(newForm.id, newForm.privateKey, StoredFormType.CREATOR)
   
   forms = [...forms, newForm];
   return newForm;
 };
 
 export const addForm = (form: FormType) => {
-  try {
-    form.privateKey = loadFormPrivateKey(form.id)
-  } catch (e) {
-    console.log("Did not find form key", form.id)
+  let loaded = false
+  const wallet = getConnectedWallet()
+  if (form.creator == wallet) {
+    try {
+      form.privateKey = loadStoredForm(form.id).privateKey
+      loaded = true
+    } catch (e) {
+      console.error("Form created by us, but PrivateKey is missing - ignoring", form.id)
+      throw e
+    }
   }
 
   const response = loadResponse(form.id)
   if (response) {
-    console.log("Found a response!!")
     form.responses.push({...response, id: "", respondentENS: ""}) //FIXME
   }
   forms = [...forms, form];
+  if (!loaded) {
+    storeForm(form.id, form.privateKey, StoredFormType.ACCESSIBLE)
+  }
 }
 
 export const addConfirmation = (formId: string, confirmationId: string) => {
@@ -74,7 +82,7 @@ export const getAllForms = (): FormType[] => {
 
 // Get forms created by a specific address
 export const getFormsByCreator = (creator: string): FormType[] => {
-  return forms.filter(form => form.creator.toLowerCase() === creator.toLowerCase());
+  return forms.filter(form => form.creator.toLowerCase() === creator.toLowerCase() && form.privateKey);
 };
 
 // Get a specific form
@@ -94,7 +102,7 @@ export const submitResponse = async (response: FormSubmissionParams): Promise<Fo
     throw new Error('Respondent address is required');
   }
 
-  if(!await canAccessForm(response.formId, response.respondent)) {
+  if(!await canAccessFormById(response.formId, response.respondent)) {
     throw new Error('Respondent is not allowed to respond');
   }
   
@@ -119,6 +127,7 @@ export const submitAndPersistResponse = async (response: FormSubmissionParams): 
   const newResponse = await submitResponse(response)
 
   persistResponse(newResponse)
+  updateStoredForm(response.formId, StoredFormType.PARTICIPATED)
 
   return newResponse
 }
@@ -129,9 +138,7 @@ export const deleteForm = (id: string): void => {
 };
 
 // Check if a form is accessible by a user (via whitelist)
-export const canAccessForm = async (formId: string, userAddress: string): Promise<boolean> => {
-  const form = getFormById(formId);
-  
+export const canAccessForm = async (form: FormType, userAddress: string): Promise<boolean> => {
   if (!form) {
     return false;
   }
@@ -164,6 +171,16 @@ export const canAccessForm = async (formId: string, userAddress: string): Promis
   return false;
 };
 
+export const canAccessFormById = async (formId: string, userAddress: string): Promise<boolean> => {
+  const form = getFormById(formId);
+  
+  if (!form) {
+    return false;
+  }
+
+  return canAccessForm(form, userAddress)
+}
+
 // Check if a user has already responded to a form
 export const hasResponded = (formId: string, userAddress: string | null): boolean => {
   const form = getFormById(formId);
@@ -188,10 +205,10 @@ export const hasResponded = (formId: string, userAddress: string | null): boolea
   return false;
 }; 
 
-const storageKey = "whisperbox_formKeys"
+const storedFormsKey = "whisperbox_forms"
 
-export const persistFormPrivateKey = (formId: string, privateKey: string): void =>  {
-    let formKeys:FormKeys[] = JSON.parse(localStorage.getItem(storageKey) || "[]")
+export const storeForm = (formId: string, privateKey: string, type: StoredFormType): void =>  {
+    let formKeys:StoredForm[] = JSON.parse(localStorage.getItem(storedFormsKey) || "[]")
   
     const formIndex = formKeys.findIndex(f => f.id == formId)
 
@@ -199,12 +216,25 @@ export const persistFormPrivateKey = (formId: string, privateKey: string): void 
       throw new Error("Form key already stored")
     }
 
-    formKeys = [...formKeys, {id: formId, privateKey: privateKey}]
-    localStorage.setItem(storageKey, JSON.stringify(formKeys))
+    formKeys = [...formKeys, {id: formId, privateKey: privateKey, type: type}]
+    localStorage.setItem(storedFormsKey, JSON.stringify(formKeys))
 }
 
-export const loadFormPrivateKey = (formId: string): string => {
-    const formKeys:FormKeys[] = JSON.parse(localStorage.getItem(storageKey) || "[]")
+export const updateStoredForm = (formId: string, type: StoredFormType): void => {
+    let formKeys:StoredForm[] = JSON.parse(localStorage.getItem(storedFormsKey) || "[]")
+    
+    const formIndex = formKeys.findIndex(f => f.id == formId)
+
+    if (formIndex < 0) {
+      throw new Error("Form does not exist")
+    }
+
+    formKeys[formIndex].type = type
+    localStorage.setItem(storedFormsKey, JSON.stringify(formKeys))
+}
+
+export const loadStoredForm = (formId: string): StoredForm => {
+    const formKeys:StoredForm[] = JSON.parse(localStorage.getItem(storedFormsKey) || "[]")
     
     const formIndex = formKeys.findIndex(f => f.id == formId)
 
@@ -212,7 +242,11 @@ export const loadFormPrivateKey = (formId: string): string => {
       throw new Error("Form does not exists")
     }
 
-    return formKeys[formIndex].privateKey
+    return formKeys[formIndex]
+}
+
+export const getStoredForms = (): StoredForm[] => {
+    return JSON.parse(localStorage.getItem(storedFormsKey) || "[]")
 }
 
 
