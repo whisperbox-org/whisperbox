@@ -148,7 +148,7 @@ export class WakuClient extends EventEmitter {
             submitResponse(response)
             await this.publishConfirmation(response)
 
-            this.emit(ClientEvents.NEW_RESPONSE, { form, response: payload });
+            this.emit(ClientEvents.NEW_RESPONSE, { form, response: response });
         }
     }
 
