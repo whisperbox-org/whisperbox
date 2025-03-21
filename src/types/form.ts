@@ -15,6 +15,8 @@ export interface FormType {
   title: string;
   description: string;
   creator: string;
+  publicKey: string;
+  privateKey: string;
   createdAt: number;
   expiresAt?: string; // Optional expiry timestamp
   questions: FormQuestion[];
@@ -23,6 +25,7 @@ export interface FormType {
     value: string; // NFT contract address or comma-separated list of addresses or empty string for none
   };
   responses: FormResponse[];
+  confirmations: string[];
 }
 
 export interface FormResponse {
@@ -35,10 +38,21 @@ export interface FormResponse {
     questionId: string;
     value: string | string[];
   }[];
+  confirmationId: string | null;
+}
+
+export interface ResponseConfirmation {
+  formId: string;
+  confirmationId: string;
+}
+
+export interface FormKeys {
+  id: string,
+  privateKey: string
 }
 
 // Form creation parameter type (omitting generated fields)
-export type FormCreationParams = Omit<FormType, 'id' | 'responses' | 'createdAt'>;
+export type FormCreationParams = Omit<FormType, 'id' | 'responses' | 'createdAt' | 'publicKey' | 'privateKey' | 'confirmations'>;
 
 // Form submission parameter type (omitting generated fields)
-export type FormSubmissionParams = Omit<FormResponse, 'id' | 'submittedAt' | 'respondentENS'>; 
+export type FormSubmissionParams = Omit<FormResponse, 'id' | 'respondentENS'>;

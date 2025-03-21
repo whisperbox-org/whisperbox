@@ -1,11 +1,15 @@
 // This is a temporary in-memory store for demonstration purposes
 // In a real implementation, this would be stored encrypted and distributed
 
-import { FormType, FormResponse, FormCreationParams, FormSubmissionParams } from '@/types/form';
+import { FormType, FormResponse, FormCreationParams, FormSubmissionParams, FormKeys } from '@/types/form';
 import { checkNFTOwnership, getENS } from './wallet';
 import { FORM_CONFIG } from '@/config/form';
 import { sha256 } from 'ethers';
-import { utf8ToBytes} from "@waku/sdk"
+import { bytesToUtf8, utf8ToBytes} from "@waku/sdk"
+import { generatePrivateKey, getPublicKey } from "@waku/message-encryption";
+import { utils } from "@noble/secp256k1"
+
+
 
 // In-memory store
 let forms: FormType[] = [];
@@ -16,21 +20,51 @@ export const formId = (form: FormType): string => {
 // Create a new form
 export const createForm = (form: FormCreationParams): FormType => {
   const ts = Date.now()
+  const privateKey = generatePrivateKey()
   const newForm: FormType = {
     ...form,
     id: "",
     createdAt: ts,
     responses: [],
+    privateKey: toHexString(privateKey),
+    publicKey: toHexString(getPublicKey(privateKey)),
+    confirmations: []
   };
 
   newForm.id = formId(newForm);
+  persistFormPrivateKey(newForm.id, newForm.privateKey)
   
   forms = [...forms, newForm];
   return newForm;
 };
 
 export const addForm = (form: FormType) => {
+  try {
+    form.privateKey = loadFormPrivateKey(form.id)
+  } catch (e) {
+    console.log("Did not find form key", form.id)
+  }
+
+  const response = loadResponse(form.id)
+  if (response) {
+    console.log("Found a response!!")
+    form.responses.push({...response, id: "", respondentENS: ""}) //FIXME
+  }
   forms = [...forms, form];
+}
+
+export const addConfirmation = (formId: string, confirmationId: string) => {
+  const form = getFormById(formId)
+  if (!form) {
+    throw new Error("Form not found")
+  }
+
+  const confirmationIndex = form.confirmations.findIndex(c => c == confirmationId)
+  if (confirmationIndex > -1) {
+    return
+  }
+
+  form.confirmations.push(confirmationId)
 }
 
 // Get all forms
@@ -67,7 +101,6 @@ export const submitResponse = async (response: FormSubmissionParams): Promise<Fo
   const newResponse: FormResponse = {
     ...response,
     id: `r${Date.now()}`,
-    submittedAt: Date.now(),
     respondentENS: await getENS(response.respondent),
   };
   
@@ -75,11 +108,20 @@ export const submitResponse = async (response: FormSubmissionParams): Promise<Fo
     throw new Error('Response already exists for this respondent');
   }
 
+
   // Add the response to the form
   forms[formIndex].responses.push(newResponse);
   
   return newResponse;
 };
+
+export const submitAndPersistResponse = async (response: FormSubmissionParams): Promise<FormResponse> => {
+  const newResponse = await submitResponse(response)
+
+  persistResponse(newResponse)
+
+  return newResponse
+}
 
 // Delete a form
 export const deleteForm = (id: string): void => {
@@ -145,3 +187,70 @@ export const hasResponded = (formId: string, userAddress: string | null): boolea
   
   return false;
 }; 
+
+const storageKey = "whisperbox_formKeys"
+
+export const persistFormPrivateKey = (formId: string, privateKey: string): void =>  {
+    let formKeys:FormKeys[] = JSON.parse(localStorage.getItem(storageKey) || "[]")
+  
+    const formIndex = formKeys.findIndex(f => f.id == formId)
+
+    if (formIndex >= 0) {
+      throw new Error("Form key already stored")
+    }
+
+    formKeys = [...formKeys, {id: formId, privateKey: privateKey}]
+    localStorage.setItem(storageKey, JSON.stringify(formKeys))
+}
+
+export const loadFormPrivateKey = (formId: string): string => {
+    const formKeys:FormKeys[] = JSON.parse(localStorage.getItem(storageKey) || "[]")
+    
+    const formIndex = formKeys.findIndex(f => f.id == formId)
+
+    if (formIndex < 0) {
+      throw new Error("Form does not exists")
+    }
+
+    return formKeys[formIndex].privateKey
+}
+
+
+const responseKey = "whisperbox_response"
+export const persistResponse = (response: FormSubmissionParams): void =>  {
+  let responses:FormSubmissionParams[] = JSON.parse(localStorage.getItem(responseKey) || "[]")
+
+  const formIndex = responses.findIndex(f => f.formId == response.formId)
+
+  if (formIndex >= 0) {
+    throw new Error("Response already exists")
+  }
+
+  responses = [...responses, response]
+  localStorage.setItem(responseKey, JSON.stringify(responses))
+}
+
+export const loadResponse = (formId: string): FormSubmissionParams | undefined => {
+  const responses:FormSubmissionParams[] = JSON.parse(localStorage.getItem(responseKey) || "[]")
+  
+  const formIndex = responses.findIndex(f => f.formId == formId)
+
+  if (formIndex < 0) {
+    return
+  }
+
+  return responses[formIndex]
+}
+
+export function toHexString(byteArray: Uint8Array) {
+  return Array.prototype.map.call(byteArray, function(byte) {
+    return ('0' + (byte & 0xFF).toString(16)).slice(-2);
+  }).join('');
+}
+export function toByteArray(hexString: string) {
+  const result = [];
+  for (let i = 0; i < hexString.length; i += 2) {
+    result.push(parseInt(hexString.substr(i, 2), 16));
+  }
+  return result;
+}

@@ -10,6 +10,7 @@ import {
   getNetwork, 
   getENS
 } from '@/lib/wallet';
+import { useWakuContext } from '@/hooks/useWaku';
 
 const WalletConnect: React.FC = () => {
   const [isConnected, setIsConnected] = useState(false);

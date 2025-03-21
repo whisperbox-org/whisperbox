@@ -52,7 +52,7 @@ export const useFormResponseNotifications = () => {
               </button>
             </div>
           ),
-                    variant: "default",
+          variant: "default",
         });
       }
     };
