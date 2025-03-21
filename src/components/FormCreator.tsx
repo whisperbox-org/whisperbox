@@ -526,12 +526,12 @@ const FormCreator: React.FC = () => {
                 </p>
               </div>
             ) : (
-              <div className="p-4 rounded-lg bg-blue-50/30 border border-blue-100">
+              <div className="p-4 rounded-lg bg-primary/5 dark:bg-primary/10 border border-primary/10">
                 <div className="flex items-start">
-                  <Globe className="w-5 h-5 text-blue-600 mr-2 flex-shrink-0 mt-0.5" />
+                  <Globe className="w-5 h-5 text-primary mr-2 flex-shrink-0 mt-0.5" />
                   <div>
-                    <h3 className="font-medium text-blue-900 mb-1">Public Access Selected (Default)</h3>
-                    <p className="text-sm text-blue-800">
+                    <h3 className="font-medium text-foreground mb-1">Public Access Selected (Default)</h3>
+                    <p className="text-sm text-muted-foreground">
                       Anyone with a connected wallet will be able to access this form.
                       No NFT ownership or address verification will be performed.
                     </p>
