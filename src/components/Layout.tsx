@@ -1,8 +1,8 @@
-
 import React from 'react';
 import Navbar from './Navbar';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
+import { useFormResponseNotifications } from '@/hooks/useFormResponseNotifications';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -10,6 +10,8 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
+
+  useFormResponseNotifications();
   
   const pageVariants = {
     initial: {
