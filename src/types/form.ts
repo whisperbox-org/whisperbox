@@ -26,6 +26,7 @@ export interface FormType {
   };
   responses: FormResponse[];
   confirmations: string[];
+  signature: string; // Signature from creator to verify identity
 }
 
 export interface FormResponse {
@@ -61,7 +62,7 @@ export enum StoredFormType {
 }
 
 // Form creation parameter type (omitting generated fields)
-export type FormCreationParams = Omit<FormType, 'id' | 'responses' | 'createdAt' | 'publicKey' | 'privateKey' | 'confirmations'>;
+export type FormCreationParams = Omit<FormType, 'id' | 'responses' | 'publicKey' | 'privateKey' | 'confirmations'>;
 
 // Form submission parameter type (omitting generated fields)
 export type FormSubmissionParams = Omit<FormResponse, 'id' | 'respondentENS'>;

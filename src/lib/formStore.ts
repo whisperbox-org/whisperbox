@@ -2,12 +2,11 @@
 // In a real implementation, this would be stored encrypted and distributed
 
 import { FormType, FormResponse, FormCreationParams, FormSubmissionParams, StoredForm, StoredFormType } from '@/types/form';
-import { checkNFTOwnership, formatMessageToSign, getConnectedWallet, getENS, recoverAddress } from './wallet';
+import { checkNFTOwnership, formatMessageToSign, getConnectedWallet, getENS, recoverAddress, formatFormCreationMessage } from './wallet';
 import { FORM_CONFIG } from '@/config/form';
 import { sha256 } from 'ethers';
-import { bytesToUtf8, utf8ToBytes} from "@waku/sdk"
+import { utf8ToBytes} from "@waku/sdk"
 import { generatePrivateKey, getPublicKey } from "@waku/message-encryption";
-import { utils } from "@noble/secp256k1"
 
 
 
@@ -17,14 +16,41 @@ let forms: FormType[] = [];
 export const formId = (form: FormType): string => {
   return sha256(utf8ToBytes(form.title+form.creator+form.createdAt))
 }
+// Validate form creator's signature
+export const validateFormCreator = (form: FormType): { valid: boolean; error?: string } => {
+  if (!form.signature) {
+    return { valid: false, error: "Form signature is missing" };
+  }
+  
+  const messageToSign = formatFormCreationMessage(
+    form.title,
+    form.creator,
+    form.createdAt
+  );
+  
+  try {
+    const recoveredAddress = recoverAddress(messageToSign, form.signature);
+    if (recoveredAddress.toLowerCase() !== form.creator.toLowerCase()) {
+      return { valid: false, error: "Signature does not match creator address" };
+    }
+    return { valid: true };
+  } catch (e) {
+    console.error("Form creator signature validation failed:", e);
+    return { valid: false, error: "Signature validation failed" };
+  }
+};
+
 // Create a new form
 export const createForm = (form: FormCreationParams): FormType => {
-  const ts = Date.now()
+  // Validate the form signature
+  if (!form.signature) {
+    throw new Error("Form signature is required");
+  }
+  
   const privateKey = generatePrivateKey()
   const newForm: FormType = {
     ...form,
     id: "",
-    createdAt: ts,
     responses: [],
     privateKey: toHexString(privateKey),
     publicKey: toHexString(getPublicKey(privateKey)),
@@ -32,6 +58,13 @@ export const createForm = (form: FormCreationParams): FormType => {
   };
 
   newForm.id = formId(newForm);
+  
+  // Validate the creator's signature before storing
+  const validation = validateFormCreator(newForm);
+  if (!validation.valid) {
+    throw new Error(validation.error || "Form signature validation failed");
+  }
+  
   storeForm(newForm.id, newForm.privateKey, StoredFormType.CREATOR)
   
   forms = [...forms, newForm];
@@ -150,7 +183,9 @@ export const deleteForm = (id: string): void => {
 };
 
 // Check if a form is accessible by a user (via whitelist)
-export const canAccessForm = async (form: FormType, userAddress: string): Promise<boolean> => {
+export const canAccessForm = async (formIdOrForm: string | FormType, userAddress: string): Promise<boolean> => {
+  const form = typeof formIdOrForm === 'string' ? getFormById(formIdOrForm) : formIdOrForm;
+  
   if (!form) {
     return false;
   }
@@ -184,13 +219,7 @@ export const canAccessForm = async (form: FormType, userAddress: string): Promis
 };
 
 export const canAccessFormById = async (formId: string, userAddress: string): Promise<boolean> => {
-  const form = getFormById(formId);
-  
-  if (!form) {
-    return false;
-  }
-
-  return canAccessForm(form, userAddress)
+  return canAccessForm(formId, userAddress);
 }
 
 // Check if a user has already responded to a form
@@ -220,7 +249,7 @@ export const hasResponded = (formId: string, userAddress: string | null): boolea
 const storedFormsKey = "whisperbox_forms"
 
 export const storeForm = (formId: string, privateKey: string, type: StoredFormType): void =>  {
-    let formKeys:StoredForm[] = JSON.parse(localStorage.getItem(storedFormsKey) || "[]")
+    const formKeys:StoredForm[] = JSON.parse(localStorage.getItem(storedFormsKey) || "[]")
   
     const formIndex = formKeys.findIndex(f => f.id == formId)
 
@@ -228,12 +257,12 @@ export const storeForm = (formId: string, privateKey: string, type: StoredFormTy
       throw new Error("Form key already stored")
     }
 
-    formKeys = [...formKeys, {id: formId, privateKey: privateKey, type: type}]
-    localStorage.setItem(storedFormsKey, JSON.stringify(formKeys))
+    const updatedFormKeys = [...formKeys, {id: formId, privateKey: privateKey, type: type}]
+    localStorage.setItem(storedFormsKey, JSON.stringify(updatedFormKeys))
 }
 
 export const updateStoredForm = (formId: string, type: StoredFormType): void => {
-    let formKeys:StoredForm[] = JSON.parse(localStorage.getItem(storedFormsKey) || "[]")
+    const formKeys:StoredForm[] = JSON.parse(localStorage.getItem(storedFormsKey) || "[]")
     
     const formIndex = formKeys.findIndex(f => f.id == formId)
 
@@ -261,10 +290,9 @@ export const getStoredForms = (): StoredForm[] => {
     return JSON.parse(localStorage.getItem(storedFormsKey) || "[]")
 }
 
-
 const responseKey = "whisperbox_response"
 export const persistResponse = (response: FormSubmissionParams): void =>  {
-  let responses:FormSubmissionParams[] = JSON.parse(localStorage.getItem(responseKey) || "[]")
+  const responses:FormSubmissionParams[] = JSON.parse(localStorage.getItem(responseKey) || "[]")
 
   const formIndex = responses.findIndex(f => f.formId == response.formId)
 
@@ -272,8 +300,8 @@ export const persistResponse = (response: FormSubmissionParams): void =>  {
     throw new Error("Response already exists")
   }
 
-  responses = [...responses, response]
-  localStorage.setItem(responseKey, JSON.stringify(responses))
+  const updatedResponses = [...responses, response]
+  localStorage.setItem(responseKey, JSON.stringify(updatedResponses))
 }
 
 export const loadResponse = (formId: string): FormSubmissionParams | undefined => {
