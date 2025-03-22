@@ -16,6 +16,7 @@ import AnimatedTransition from '@/components/AnimatedTransition';
 import { useToast } from '@/hooks/use-toast';
 import { FormType, StoredFormType } from '@/types';
 import { useWakuContext } from '@/hooks/useWaku';
+import { ClientEvents } from '@/lib/waku';
 
 const View: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -103,6 +104,9 @@ const View: React.FC = () => {
     };
     
     loadForm();
+
+    if (client)
+      client.on(ClientEvents.NEW_RESPONSE, loadForm)
   }, [id, navigate, toast, client, connected]);
 
   const handleCopyLink = () => {

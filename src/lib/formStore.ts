@@ -47,12 +47,10 @@ export const createForm = (form: FormCreationParams): FormType => {
     throw new Error("Form signature is required");
   }
   
-  const ts = Date.now()
   const privateKey = generatePrivateKey()
   const newForm: FormType = {
     ...form,
     id: "",
-    createdAt: ts,
     responses: [],
     privateKey: toHexString(privateKey),
     publicKey: toHexString(getPublicKey(privateKey)),

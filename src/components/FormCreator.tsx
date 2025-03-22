@@ -194,6 +194,7 @@ const FormCreator: React.FC = () => {
         const newForm = createForm({
           title,
           description,
+          createdAt: timestamp,
           creator: walletAddress,
           questions,
           whitelist: {
