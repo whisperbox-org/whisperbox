@@ -10,6 +10,7 @@ import AnimatedTransition from '@/components/AnimatedTransition';
 import { getAllForms, getFormsByCreator, getStoredForms} from '@/lib/formStore';
 import { useWakuContext } from '@/hooks/useWakuHooks';
 import { ClientEvents } from '@/lib/waku';
+import { getAllPublicForms } from '@/lib/publicFormFeed';
 
 // Define tab types for better type safety
 type TabType = 'created' | 'accessible' | 'participated' | 'viewed';
@@ -20,10 +21,14 @@ const Forms: React.FC = () => {
   const [viewedForms, setViewedForms] = useState<FormType[]>([]);
   const [participatedForms, setParticipatedForms] = useState<FormType[]>([])
   const [accessibleForms, setAccesibleForms] = useState<FormType[]>([])
+  const [publicForms, setPublicForms] = useState<FormType[]>([]);
+
 
   const [loading, setLoading] = useState(true);
   const [walletConnected, setWalletConnected] = useState(false);
   const {client, connected} = useWakuContext()
+
+  const [enablePublicFormsFeed, setEnablePublicFormsFeed] = useState(false)
 
   useEffect(() => {
     const loadForms = async () => {
@@ -69,6 +74,20 @@ const Forms: React.FC = () => {
       window.removeEventListener('wallet_disconnected', loadForms);
     };
   }, [connected, client]);
+
+  useEffect(() => {
+    if (!connected || !enablePublicFormsFeed || !client) return
+
+    const loadPublicForms = () => {
+      const publicForms = getAllPublicForms()
+
+      setPublicForms(publicForms.sort((a, b) => b.createdAt - a.createdAt))
+    }
+
+    loadPublicForms()
+    if (client)
+      client.on(ClientEvents.NEW_PUBLIC_FORM, loadPublicForms)
+  }, [enablePublicFormsFeed, client, connected])
 
   if (loading) {
     return (

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CalendarClock, ChevronRight, FileText, Users, Clock, Shield } from 'lucide-react';
 import { FormType } from '@/types/form';
+import { addForm } from '@/lib/formStore';
 
 interface FormCardProps {
   form: FormType;

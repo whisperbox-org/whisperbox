@@ -175,7 +175,11 @@ export const submitAndPersistResponse = async (response: FormSubmissionParams): 
   const newResponse = await submitResponse(response)
 
   persistResponse(newResponse)
-  updateStoredForm(response.formId, StoredFormType.PARTICIPATED)
+  if (loadStoredForm(response.formId)) {
+    updateStoredForm(response.formId, StoredFormType.PARTICIPATED)
+  } else {
+    storeForm(response.formId, "", StoredFormType.PARTICIPATED)
+  }
 
   return newResponse
 }
