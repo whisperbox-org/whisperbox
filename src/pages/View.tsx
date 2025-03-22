@@ -32,6 +32,7 @@ const View: React.FC = () => {
   const [formUrl, setFormUrl] = useState('');
   const [copied, setCopied] = useState(false);
   const {client, connected} = useWakuContext()
+  const [creatorENS, setCreatorENS] = useState<string | null>(null)
 
   useEffect(() => {
     const loadForm = async () => {
@@ -92,6 +93,8 @@ const View: React.FC = () => {
           setHasAlreadyResponded(responded);
         }
       }
+
+      setCreatorENS(await walletService.getENS(foundForm.creator))
 
       if (foundForm.id == id) {
         const storedForm = loadStoredForm(id)
@@ -222,6 +225,11 @@ const View: React.FC = () => {
                 <div className="flex items-center text-sm text-muted-foreground">
                   <User className="w-4 h-4 mr-1.5" />
                   {form.confirmations.length} responses
+                </div>
+
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <User className="w-4 h-4 mr-1.5" />
+                  Created by { creatorENS || walletService.shortAddress(form.creator)}
                 </div>
                 
                 {form.whitelist.type === 'none' ? (
