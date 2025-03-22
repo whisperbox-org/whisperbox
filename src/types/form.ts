@@ -46,9 +46,17 @@ export interface ResponseConfirmation {
   confirmationId: string;
 }
 
-export interface FormKeys {
+export interface StoredForm {
   id: string,
   privateKey: string
+  type: StoredFormType
+}
+
+export enum StoredFormType {
+  ACCESSIBLE = 'accessible',
+  VIEWED = 'viewed',
+  PARTICIPATED = 'participated',
+  CREATOR = 'creator'
 }
 
 // Form creation parameter type (omitting generated fields)

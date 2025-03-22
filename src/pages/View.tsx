@@ -6,13 +6,15 @@ import FormResponse from '@/components/FormResponse';
 import NFTGate from '@/components/NFTGate';
 import { 
   getFormById, 
-  canAccessForm, 
-  hasResponded 
+  hasResponded, 
+  canAccessFormById,
+  updateStoredForm,
+  loadStoredForm
 } from '@/lib/formStore';
 import { getConnectedWallet } from '@/lib/wallet';
 import AnimatedTransition from '@/components/AnimatedTransition';
 import { useToast } from '@/hooks/use-toast';
-import { FormType } from '@/types';
+import { FormType, StoredFormType } from '@/types';
 import { useWakuContext } from '@/hooks/useWaku';
 
 const View: React.FC = () => {
@@ -81,12 +83,19 @@ const View: React.FC = () => {
           setHasAccess(true);
         } else {
           // Check if user has access to the form
-          const access = await canAccessForm(id, wallet);
+          const access = await canAccessFormById(id, wallet);
           setHasAccess(access);
           
           // Check if user has already responded
           const responded = hasResponded(id, wallet);
           setHasAlreadyResponded(responded);
+        }
+      }
+
+      if (foundForm.id == id) {
+        const storedForm = loadStoredForm(id)
+        if (storedForm.type == StoredFormType.ACCESSIBLE) {
+          updateStoredForm(id, StoredFormType.VIEWED)
         }
       }
 

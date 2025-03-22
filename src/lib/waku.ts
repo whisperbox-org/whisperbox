@@ -1,7 +1,7 @@
 import EventEmitter from "events"
 import getDispatcher, { Dispatcher} from "waku-dispatcher"
 import { bytesToUtf8,  IWaku, LightNode, Protocols, utf8ToBytes,  } from "@waku/sdk";
-import { addConfirmation, addForm, getAllForms, getFormById, getFormsByCreator, submitResponse, toByteArray, toHexString } from "./formStore";
+import { addConfirmation, addForm, canAccessForm, getAllForms, getFormById, getFormsByCreator, loadStoredForm, storeForm, submitResponse, toByteArray, toHexString } from "./formStore";
 import { FormSubmissionParams, FormType, ResponseConfirmation } from "@/types";
 import { EncryptedFormSubmissionParams } from "@/types/waku";
 import { decryptAsymmetric, encryptAsymmetric } from "@waku/message-encryption/ecies";
@@ -17,7 +17,8 @@ export enum ClientState {
 
 export enum ClientEvents {
     STATE_UPDATE = "state_update",
-    NEW_RESPONSE = "new_response"
+    NEW_RESPONSE = "new_response",
+    NEW_FORM = "new_form",
 }
 
 export enum MessageTypes {
@@ -34,6 +35,7 @@ export class WakuClient extends EventEmitter {
     node:IWaku | undefined = undefined
     dispatcher:Dispatcher | null = null
     address:string | undefined = undefined
+    currentFormId: string | undefined = undefined
 
 
     constructor(node:IWaku | undefined) {
@@ -111,12 +113,32 @@ export class WakuClient extends EventEmitter {
         this.address = address
     }
 
+    public setCurrentFormId(id: string | undefined):void {
+        this.currentFormId = id
+    }
+
+
     private handleNewForm(payload: FormType): void {
         const form = getFormById(payload.id)
 
         if(!form) {
+            if (this.currentFormId != payload.id && payload.whitelist.type == "none") {
+                try {
+                    loadStoredForm(payload.id) //See if we loaded or participated in the form previously
+                } catch(e) {
+                    throw new Error(`ignoring public form ${payload.id}`)
+                }
+            }
+
+            if (!canAccessForm(payload, this.address!)) {
+                throw new Error("ignoring form I cannot access")
+            }
+
             addForm(payload)
+            this.emit(ClientEvents.NEW_FORM, {formId: payload.id})
+            return
         }
+        throw new Error("Form already exists")
     }
 
     private async handleResponse(payload: EncryptedFormSubmissionParams): Promise<void> {
@@ -138,8 +160,7 @@ export class WakuClient extends EventEmitter {
         }
 
         if (!response) {
-            console.error("Failed to match response with a form")
-            return
+            throw new Error("Failed to match response with a form")
         }
         const form = getFormById(response.formId)
 
@@ -157,7 +178,10 @@ export class WakuClient extends EventEmitter {
 
         if(form) {
             addConfirmation(payload.formId, payload.confirmationId)
+            return
         }
+
+        throw new Error("Ignoring confirmation for unknown form")
     }
 
     public async publishForm(form: FormType): Promise<boolean> {

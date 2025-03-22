@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Navbar from './Navbar';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import { useFormResponseNotifications } from '@/hooks/useFormResponseNotifications';
+import { useWakuContext } from '@/hooks/useWaku';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -10,6 +11,9 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
+  const { id } = useParams<{ id: string }>();
+  const {client} = useWakuContext()
+ 
 
   useFormResponseNotifications();
   
@@ -33,6 +37,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     ease: 'anticipate',
     duration: 0.5,
   };
+
+  useEffect(() => {
+    if (!client ) return
+
+    console.log("Setting the id!!!!")
+    client.setCurrentFormId(id)
+  }, [client, id])
 
   return (
     <div className="min-h-screen flex flex-col">

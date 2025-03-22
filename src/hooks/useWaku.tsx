@@ -94,9 +94,9 @@ export const WakuContextProvider = ({ children, updateStatus }: Props) => {
                         })
 
                     const c = new WakuClient(ln);
+                    setClient(c)
                     c.setAddress(address)
                     await c.init()
-                    setClient(c)
                     setStatus("connected")
                     setConnected(true)
                     setConnecting(false)

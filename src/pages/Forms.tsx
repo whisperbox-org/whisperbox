@@ -4,14 +4,19 @@ import { PlusCircle, FileQuestion, Loader, Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import FormCard from '@/components/FormCard';
-import { FormType } from '@/types/form';
+import { FormType, StoredFormType } from '@/types/form';
 import { getConnectedWallet } from '@/lib/wallet';
 import AnimatedTransition from '@/components/AnimatedTransition';
-import { getFormsByCreator } from '@/lib/formStore';
+import { getAllForms, getFormsByCreator, getStoredForms, loadStoredForm } from '@/lib/formStore';
 import { useWakuContext } from '@/hooks/useWaku';
+import { ClientEvents } from '@/lib/waku';
 
 const Forms: React.FC = () => {
-  const [forms, setForms] = useState<FormType[]>([]);
+  const [createdForms, setCreatedForms] = useState<FormType[]>([]);
+  const [viewedForms, setViewedForms] = useState<FormType[]>([]);
+  const [participatedForms, setParticipatedForms] = useState<FormType[]>([])
+  const [accessibleForms, setAccesibleForms] = useState<FormType[]>([])
+
   const [loading, setLoading] = useState(true);
   const [walletConnected, setWalletConnected] = useState(false);
   const {client, connected} = useWakuContext()
@@ -27,15 +32,29 @@ const Forms: React.FC = () => {
         
         // Get the user's forms
         const userForms = getFormsByCreator(wallet);
-        setForms(userForms);
+        setCreatedForms(userForms);
       } else {
         setWalletConnected(false);
       }
+
+      const storedForms = getStoredForms()
+      const viewedFormsFitler = storedForms.filter(f => f.type == StoredFormType.VIEWED)
+      const participatedFormsFilter = storedForms.filter(f => f.type == StoredFormType.PARTICIPATED)
+      const accessibleFormsFilter = storedForms.filter(f => f.type == StoredFormType.ACCESSIBLE)
+      const allForms = getAllForms()
+
+      setViewedForms(allForms.filter(f => viewedFormsFitler.findIndex(vf => vf.id == f.id) >= 0))
+      setParticipatedForms(allForms.filter(f => participatedFormsFilter.findIndex(vf => vf.id == f.id) >= 0))
+      setAccesibleForms(allForms.filter(f => accessibleFormsFilter.findIndex(vf => vf.id == f.id) >= 0))
+
       
       setLoading(false);
     };
     
     loadForms();
+
+    if (client)
+      client.on(ClientEvents.NEW_FORM, loadForms)
 
     // Add event listener for wallet changes
     window.addEventListener('wallet_changed', loadForms);
@@ -104,7 +123,7 @@ const Forms: React.FC = () => {
             </AnimatedTransition>
           </div>
 
-          {forms.length === 0 ? (
+          {createdForms.length === 0 ? (
             <div className="glassmorphism rounded-xl p-12 text-center max-w-2xl mx-auto">
               <FileQuestion className="w-16 h-16 text-muted-foreground/40 mx-auto mb-6" />
               <h2 className="text-2xl font-semibold mb-2">No Forms Yet</h2>
@@ -124,10 +143,61 @@ const Forms: React.FC = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {forms.map((form, index) => (
+              {createdForms.map((form, index) => (
                 <FormCard key={form.id} form={form} delay={index} />
               ))}
             </div>
+          )}
+
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-12 mt-12">
+            <AnimatedTransition>
+              <div>
+                <h1 className="text-3xl font-bold">New forms for you to participate in</h1>
+              </div>
+            </AnimatedTransition>
+          </div>
+          {accessibleForms.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {accessibleForms.map((form, index) => (
+                <FormCard key={form.id} form={form} delay={index} />
+              ))}
+            </div>
+          ): (
+            <div>You have accessible forms yet</div>
+          )}
+        
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-12 mt-12">
+            <AnimatedTransition>
+              <div>
+                <h1 className="text-3xl font-bold">Forms you participated in</h1>
+              </div>
+            </AnimatedTransition>
+          </div>
+          {participatedForms.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {participatedForms.map((form, index) => (
+                <FormCard key={form.id} form={form} delay={index} />
+              ))}
+            </div>
+          ): (
+            <div>You have not participated in any form yet</div>
+          )}
+        
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-12 mt-12">
+            <AnimatedTransition>
+              <div>
+                <h1 className="text-3xl font-bold">Forms you have access to or viewed</h1>
+              </div>
+            </AnimatedTransition>
+          </div>
+          {viewedForms.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {viewedForms.map((form, index) => (
+                <FormCard key={form.id} form={form} delay={index} />
+              ))}
+            </div>
+          ): (
+            <div>You have not viewed any form yet</div>
           )}
         </div>
       </div>
