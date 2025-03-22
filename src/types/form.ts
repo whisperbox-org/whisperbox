@@ -26,6 +26,7 @@ export interface FormType {
   };
   responses: FormResponse[];
   confirmations: string[];
+  signature: string; // Signature from creator to verify identity
 }
 
 export interface FormResponse {

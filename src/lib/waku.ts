@@ -1,7 +1,7 @@
 import EventEmitter from "events"
 import getDispatcher, { Dispatcher} from "waku-dispatcher"
 import { bytesToUtf8,  IWaku, LightNode, Protocols, utf8ToBytes,  } from "@waku/sdk";
-import { addConfirmation, addForm, canAccessForm, getAllForms, getFormById, getFormsByCreator, loadStoredForm, storeForm, submitResponse, toByteArray, toHexString } from "./formStore";
+import { addConfirmation, addForm, canAccessForm, getAllForms, getFormById, getFormsByCreator, loadStoredForm, storeForm, submitResponse, toByteArray, toHexString, validateFormCreator } from "./formStore";
 import { FormSubmissionParams, FormType, ResponseConfirmation } from "@/types";
 import { EncryptedFormSubmissionParams } from "@/types/waku";
 import { decryptAsymmetric, encryptAsymmetric } from "@waku/message-encryption/ecies";
@@ -122,9 +122,14 @@ export class WakuClient extends EventEmitter {
         const form = getFormById(payload.id)
 
         if(!form) {
+            const validation = validateFormCreator(payload);
+            if (!validation.valid) {
+                throw new Error(`Form creator signature validation failed: ${validation.error}`);
+            }
+            
             if (this.currentFormId != payload.id && payload.whitelist.type == "none") {
                 try {
-                    loadStoredForm(payload.id) //See if we loaded or participated in the form previously
+                    loadStoredForm(payload.id)
                 } catch(e) {
                     throw new Error(`ignoring public form ${payload.id}`)
                 }

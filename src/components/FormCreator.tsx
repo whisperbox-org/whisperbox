@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Minus, Trash2, Save, HelpCircle, AlignLeft, CheckSquare, ListChecks, FileText, Globe, Shield, Users, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { FormQuestion } from '@/types/form';
-import { getConnectedWallet } from '@/lib/wallet';
+import { getConnectedWallet, signMessage, formatFormCreationMessage } from '@/lib/wallet';
 import { useNavigate } from 'react-router-dom';
 import { createForm } from '@/lib/formStore';
 import { FORM_CONFIG } from '@/config/form';
@@ -172,54 +172,83 @@ const FormCreator: React.FC = () => {
       // Create form with potentially empty whitelist value for 'none' type
       const whitelistValueToUse = whitelistType === FORM_CONFIG.WHITELIST_TYPES.NONE ? '' : whitelistValue;
       
-      // Create form
-      const newForm = createForm({
-        title,
-        description,
-        creator: walletAddress,
-        questions,
-        whitelist: {
-          type: whitelistType,
-          value: whitelistValueToUse,
-        },
-      });
+      // Generate a timestamp for the form creation
+      const timestamp = Date.now();
       
-      // Simulate network delay
-      //await new Promise(resolve => setTimeout(resolve, 1500));
-      const result = await client.publishForm(newForm)
-      if (!result) {
-        throw new Error("Failed to publish new form")
+      // Create a signature to verify the form creator
+      let signature;
+      try {
+        const messageToSign = formatFormCreationMessage(title, walletAddress, timestamp);
+        signature = await signMessage(messageToSign);
+      } catch (error) {
+        toast({
+          title: "Signature Error",
+          description: "Failed to sign form creation. You must approve the signature request.",
+          variant: "destructive",
+        });
+        return;
       }
-
       
-      // Generate the shareable link
-      const formLink = `${window.location.origin}/view/${newForm.id}`;
-      
-      // Show success toast with copy button
-      toast({
-        title: "Form created",
-        description: (
-          <div className="flex flex-col space-y-2">
-            <p>Your form has been created successfully!</p>
-            <button
-              onClick={() => {
-                navigator.clipboard.writeText(formLink);
-                toast({
-                  title: "Link copied",
-                  description: "Form link copied to clipboard",
-                });
-              }}
-              className="flex items-center mt-2 px-3 py-1.5 bg-secondary rounded-lg text-xs font-medium"
-            >
-              <Copy className="w-3.5 h-3.5 mr-1.5" />
-              Copy Form Link
-            </button>
-          </div>
-        ),
-        duration: 5000, // Show longer to give time to copy
-      });
-      
-      navigate(`/view/${newForm.id}`);
+      // Create form with signature
+      try {
+        const newForm = createForm({
+          title,
+          description,
+          creator: walletAddress,
+          questions,
+          whitelist: {
+            type: whitelistType,
+            value: whitelistValueToUse,
+          },
+          signature,
+        });
+        
+        // Publish the form to the Waku network
+        const result = await client.publishForm(newForm)
+        if (!result) {
+          throw new Error("Failed to publish new form")
+        }
+        
+        // Generate the shareable link
+        const formLink = `${window.location.origin}/view/${newForm.id}`;
+        
+        // Show success toast with copy button
+        toast({
+          title: "Form created",
+          description: (
+            <div className="flex flex-col space-y-2">
+              <p>Your form has been created successfully!</p>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(formLink);
+                  toast({
+                    title: "Link copied",
+                    description: "Form link copied to clipboard",
+                  });
+                }}
+                className="flex items-center mt-2 px-3 py-1.5 bg-secondary rounded-lg text-xs font-medium"
+              >
+                <Copy className="w-3.5 h-3.5 mr-1.5" />
+                Copy Form Link
+              </button>
+            </div>
+          ),
+          duration: 5000, // Show longer to give time to copy
+        });
+        
+        navigate(`/view/${newForm.id}`);
+      } catch (error) {
+        // Handle specific signature validation errors
+        if (error instanceof Error && error.message.includes("signature")) {
+          toast({
+            title: "Signature Validation Failed",
+            description: error.message,
+            variant: "destructive",
+          });
+        } else {
+          throw error; // Re-throw other errors to be caught by the outer catch
+        }
+      }
     } catch (error) {
       console.error('Error creating form:', error);
       toast({
