@@ -1,4 +1,4 @@
-import { ethers, hexlify, toUtf8Bytes } from 'ethers';
+import { ethers } from 'ethers';
 import { WALLET_CONFIG, WALLET_EVENT_NAMES } from '@/config/wallet';
 import { STORAGE_KEYS } from '@/config/storage';
 
@@ -199,6 +199,10 @@ export const isWhitelisted = async (
 export const formatMessageToSign = (formId:string, walletAddress: string, ts: number): string => {
   return `Submitting form response to ${formId} as ${walletAddress} at ${new Date(ts)}`
 }
+
+export const formatFormCreationMessage = (formTitle: string, walletAddress: string, timestamp: number): string => {
+  return `Creating form "${formTitle}" at ${new Date(timestamp)} as ${walletAddress}`;
+};
 
 export const recoverAddress = (msg: string, signature: string): string => {
   return ethers.verifyMessage(msg, signature)
