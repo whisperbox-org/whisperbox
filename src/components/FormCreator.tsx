@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Minus, Trash2, Save, HelpCircle, AlignLeft, CheckSquare, ListChecks, FileText, Globe, Shield, Users, Copy } from 'lucide-react';
+import { motion, AnimatePresence, Reorder } from 'framer-motion';
+import { Plus, Minus, Trash2, Save, HelpCircle, AlignLeft, CheckSquare, ListChecks, FileText, Globe, Shield, Users, Copy, GripVertical } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { FormQuestion } from '@/types/form';
 import { walletService } from '@/lib/wallet';
@@ -277,6 +277,11 @@ const FormCreator: React.FC = () => {
     }
   };
 
+  // Handler for reordering questions
+  const handleReorder = (reorderedQuestions: FormQuestion[]) => {
+    setQuestions(reorderedQuestions);
+  };
+
   return (
     <div className="max-w-3xl mx-auto pb-16">
       <div className="mb-8 flex justify-between items-center">
@@ -357,111 +362,120 @@ const FormCreator: React.FC = () => {
         <div>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">Questions</h2>
+            <p className="text-xs text-muted-foreground">Drag questions to reorder</p>
           </div>
           
-          {questions.map((question, index) => (
-            <motion.div
-              key={question.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-              className="mb-6 p-5 rounded-xl border border-border bg-background"
-            >
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center">
-                  <span className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary font-medium mr-3">
-                    {index + 1}
-                  </span>
-                  <div className="space-y-1">
-                    <div className="flex items-center space-x-2">
-                      {getQuestionIcon(question.type)}
-                      <select
-                        value={question.type}
-                        onChange={(e) => updateQuestion(index, 'type', e.target.value)}
-                        className="text-sm bg-secondary/50 border-0 rounded-md px-2 py-1"
-                      >
-                        <option value={FORM_CONFIG.QUESTION_TYPES.TEXT}>Short Text</option>
-                        <option value={FORM_CONFIG.QUESTION_TYPES.TEXTAREA}>Paragraph</option>
-                        <option value={FORM_CONFIG.QUESTION_TYPES.RADIO_BUTTONS}>Radio Buttons (Single Choice)</option>
-                        <option value={FORM_CONFIG.QUESTION_TYPES.CHECKBOX}>Checkboxes (Multiple Choice)</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => removeQuestion(index)}
-                  className="p-1 text-muted-foreground hover:text-destructive transition-colors"
+          <Reorder.Group axis="y" values={questions} onReorder={handleReorder} className="space-y-6">
+            {questions.map((question, index) => {
+              return (
+                <Reorder.Item
+                  key={question.id}
+                  value={question}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="mb-6 p-5 rounded-xl border border-border bg-background"
                 >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-              
-              <div className="mb-4">
-                <input
-                  type="text"
-                  value={question.text}
-                  onChange={(e) => updateQuestion(index, 'text', e.target.value)}
-                  placeholder="Question text"
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-transparent form-input-focus"
-                  required
-                />
-              </div>
-              
-              {(question.type === FORM_CONFIG.QUESTION_TYPES.RADIO_BUTTONS || question.type === FORM_CONFIG.QUESTION_TYPES.CHECKBOX) && (
-                <div className="space-y-2 ml-2">
-                  {question.options?.map((option, optionIndex) => (
-                    <div key={`${question.id}-option-${optionIndex}`} className="flex items-center">
-                      <div className="w-5 mr-2 flex justify-center">
-                        {question.type === FORM_CONFIG.QUESTION_TYPES.RADIO_BUTTONS ? (
-                          <span className="w-3.5 h-3.5 rounded-full border border-muted-foreground/40 inline-block" />
-                        ) : (
-                          <span className="w-3.5 h-3.5 rounded-sm border border-muted-foreground/40 inline-block" />
-                        )}
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center">
+                      <div className="flex items-center cursor-grab active:cursor-grabbing mr-2">
+                        <GripVertical className="w-5 h-5 text-muted-foreground hover:text-primary" />
                       </div>
-                      <input
-                        type="text"
-                        value={option}
-                        onChange={(e) => updateOption(index, optionIndex, e.target.value)}
-                        placeholder={`Option ${optionIndex + 1}`}
-                        className="flex-1 px-2 py-1 text-sm rounded border border-border bg-transparent form-input-focus"
-                      />
+                      <span className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary font-medium mr-3">
+                        {index + 1}
+                      </span>
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                          {getQuestionIcon(question.type)}
+                          <select
+                            value={question.type}
+                            onChange={(e) => updateQuestion(index, 'type', e.target.value)}
+                            className="text-sm bg-secondary/50 border-0 rounded-md px-2 py-1"
+                          >
+                            <option value={FORM_CONFIG.QUESTION_TYPES.TEXT}>Short Text</option>
+                            <option value={FORM_CONFIG.QUESTION_TYPES.TEXTAREA}>Paragraph</option>
+                            <option value={FORM_CONFIG.QUESTION_TYPES.RADIO_BUTTONS}>Multiple Choice</option>
+                            <option value={FORM_CONFIG.QUESTION_TYPES.CHECKBOX}>Checkboxes</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeQuestion(index)}
+                      className="p-1 text-muted-foreground hover:text-destructive transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <input
+                      type="text"
+                      value={question.text}
+                      onChange={(e) => updateQuestion(index, 'text', e.target.value)}
+                      placeholder="Question text"
+                      className="w-full px-3 py-2 rounded-lg border border-border bg-transparent form-input-focus"
+                      required
+                    />
+                  </div>
+                  
+                  {(question.type === FORM_CONFIG.QUESTION_TYPES.RADIO_BUTTONS || question.type === FORM_CONFIG.QUESTION_TYPES.CHECKBOX) && (
+                    <div className="space-y-2 ml-2">
+                      {question.options?.map((option, optionIndex) => (
+                        <div key={`${question.id}-option-${optionIndex}`} className="flex items-center">
+                          <div className="w-5 mr-2 flex justify-center">
+                            {question.type === FORM_CONFIG.QUESTION_TYPES.RADIO_BUTTONS ? (
+                              <span className="w-3.5 h-3.5 rounded-full border border-muted-foreground/40 inline-block" />
+                            ) : (
+                              <span className="w-3.5 h-3.5 rounded-sm border border-muted-foreground/40 inline-block" />
+                            )}
+                          </div>
+                          <input
+                            type="text"
+                            value={option}
+                            onChange={(e) => updateOption(index, optionIndex, e.target.value)}
+                            placeholder={`Option ${optionIndex + 1}`}
+                            className="flex-1 px-2 py-1 text-sm rounded border border-border bg-transparent form-input-focus"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeOption(index, optionIndex)}
+                            className="p-1 ml-1 text-muted-foreground hover:text-destructive transition-colors"
+                            disabled={question.options!.length <= 2}
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                      
                       <button
                         type="button"
-                        onClick={() => removeOption(index, optionIndex)}
-                        className="p-1 ml-1 text-muted-foreground hover:text-destructive transition-colors"
-                        disabled={question.options!.length <= 2}
+                        onClick={() => addOption(index)}
+                        className="flex items-center mt-2 text-xs text-primary hover:text-primary/80 transition-colors"
                       >
-                        <Minus className="w-4 h-4" />
+                        <Plus className="w-3.5 h-3.5 mr-1" />
+                        Add Option
                       </button>
                     </div>
-                  ))}
+                  )}
                   
-                  <button
-                    type="button"
-                    onClick={() => addOption(index)}
-                    className="flex items-center mt-2 text-xs text-primary hover:text-primary/80 transition-colors"
-                  >
-                    <Plus className="w-3.5 h-3.5 mr-1" />
-                    Add Option
-                  </button>
-                </div>
-              )}
-              
-              <div className="mt-4 flex items-center">
-                <label className="flex items-center text-sm text-muted-foreground">
-                  <input
-                    type="checkbox"
-                    checked={question.required}
-                    onChange={(e) => updateQuestion(index, 'required', e.target.checked)}
-                    className="mr-2 rounded"
-                  />
-                  Required question
-                </label>
-              </div>
-            </motion.div>
-          ))}
+                  <div className="mt-4 flex items-center">
+                    <label className="flex items-center text-sm text-muted-foreground">
+                      <input
+                        type="checkbox"
+                        checked={question.required}
+                        onChange={(e) => updateQuestion(index, 'required', e.target.checked)}
+                        className="mr-2 rounded"
+                      />
+                      Required question
+                    </label>
+                  </div>
+                </Reorder.Item>
+              );
+            })}
+          </Reorder.Group>
         </div>
         <div className='flex justify-end'>
         <button
