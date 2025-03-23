@@ -1,9 +1,9 @@
 import { ethers } from 'ethers';
-import { WALLET_CONFIG, WALLET_EVENT_NAMES } from '@/config/wallet';
+import { ENS_CACHE, ENS_CACHE_TTL, MAINNET_RPC_URLS, WALLET_CONFIG, WALLET_EVENT_NAMES } from '@/config/wallet';
 import { STORAGE_KEYS } from '@/config/storage';
 
-// Ethereum provider cache
 let _provider: ethers.BrowserProvider | null = null;
+let _mainnetProvider: ethers.JsonRpcProvider | null = null;
 
 /**
  * Get the Ethereum provider
@@ -21,6 +21,31 @@ const getProvider = async (): Promise<ethers.BrowserProvider> => {
     }
   }
   return _provider;
+};
+
+/**
+ * Get a dedicated Ethereum mainnet provider for ENS resolution
+ * This provider always connects to mainnet regardless of wallet network
+ * @returns ethers.JsonRpcProvider connected to Ethereum mainnet
+ */
+const getMainnetProvider = (): ethers.JsonRpcProvider => {
+  if (!_mainnetProvider) {
+    for (let i = 0; i < MAINNET_RPC_URLS.length; i++) {
+      try {
+        _mainnetProvider = new ethers.JsonRpcProvider(MAINNET_RPC_URLS[i]);
+        console.log(`Connected to mainnet using provider ${i+1}`);
+        break;
+      } catch (error) {
+        console.error(`Failed to connect to mainnet provider ${i+1}:`, error);
+      }
+    }
+    
+    if (!_mainnetProvider) {
+      console.warn("All mainnet providers failed, using first provider anyway");
+      _mainnetProvider = new ethers.JsonRpcProvider(MAINNET_RPC_URLS[0]);
+    }
+  }
+  return _mainnetProvider;
 };
 
 /**
@@ -106,24 +131,79 @@ export const getBalance = async (address?: string): Promise<string> => {
   }
 };
 
+/**
+ * Get the ENS name for a wallet address
+ * Always uses Ethereum mainnet regardless of wallet's current network
+ * @param address optional wallet address (uses connected wallet if not provided)
+ * @returns ENS name or null if not found
+ */
 export const getENS = async (address?: string): Promise<string | null> => {
   try {
-    const provider = await getProvider();
     const walletAddress = address || getConnectedWallet(); 
-    console.log("Resolving ENS for wallet address: ", walletAddress)
+    console.log("Resolving ENS for wallet address:", walletAddress);
 
     if (!walletAddress) {
-      throw new Error('No wallet connected');
+      return null;
+    }
+    
+    const normalizedAddress = walletAddress.toLowerCase();
+    
+    // Check cache first
+    const cached = ENS_CACHE.get(normalizedAddress);
+    if (cached && (Date.now() - cached.timestamp < ENS_CACHE_TTL)) {
+      console.log(`Using cached ENS for ${normalizedAddress}: ${cached.name || "No ENS found"}`);
+      return cached.name;
     }
 
-    const ensName = await provider.lookupAddress(walletAddress);
-
-    return ensName;
+    // Use dedicated mainnet provider for ENS resolution
+    try {
+      const provider = getMainnetProvider();
+      const ensName = await provider.lookupAddress(normalizedAddress);
+      
+      ENS_CACHE.set(normalizedAddress, { 
+        name: ensName, 
+        timestamp: Date.now() 
+      });
+      
+      console.log(`Resolved ENS for ${normalizedAddress}: ${ensName || "No ENS found"}`);
+      return ensName;
+    } catch (providerError) {
+      console.error("Error with primary provider:", providerError);
+      
+      // Try fallback if primary provider fails
+      for (let i = 0; i < MAINNET_RPC_URLS.length; i++) {
+        try {
+          // Skip the first URL if that's what failed
+          if (i === 0 && _mainnetProvider) continue;
+          
+          console.log(`Trying fallback provider ${i+1} for ENS resolution`);
+          const fallbackProvider = new ethers.JsonRpcProvider(MAINNET_RPC_URLS[i]);
+          const ensName = await fallbackProvider.lookupAddress(normalizedAddress);
+          
+          // Cache the result
+          ENS_CACHE.set(normalizedAddress, { 
+            name: ensName, 
+            timestamp: Date.now() 
+          });
+          
+          // Update the main provider to use this working one
+          _mainnetProvider = fallbackProvider;
+          
+          console.log(`Resolved ENS using fallback provider ${i+1}: ${ensName || "No ENS found"}`);
+          return ensName;
+        } catch (fallbackError) {
+          console.error(`Fallback provider ${i+1} failed:`, fallbackError);
+        }
+      }
+      
+      // If all fallbacks fail, cache null result to avoid repeated failures
+      ENS_CACHE.set(normalizedAddress, { name: null, timestamp: Date.now() });
+      return null;
+    }
   } catch (error) {
     console.error('Error getting ENS:', error);
-    throw new Error('Failed to get ENS for the wallet address');
+    return null;
   }
-
 }
 
 /**

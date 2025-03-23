@@ -6,5 +6,6 @@
 // Application storage keys
 export const STORAGE_KEYS = {
   STORED_FORMS: 'whisperbox_forms',
-  STORED_RESPONSES: 'whisperbox_response'
+  STORED_RESPONSES: 'whisperbox_response',
+  WALLET: 'whisperbox_wallet'
 }; 
