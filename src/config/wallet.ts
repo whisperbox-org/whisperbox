@@ -28,6 +28,16 @@ export const MAINNET_RPC_URLS = [
   "https://eth.llamarpc.com"
 ];
 
+export const ETHERSCAN_URLS: Record<string, string> = {
+  'homestead': 'https://etherscan.io',
+  'mainnet': 'https://etherscan.io',
+  'sepolia': 'https://sepolia.etherscan.io',
+  'goerli': 'https://goerli.etherscan.io',
+  'ropsten': 'https://ropsten.etherscan.io', 
+  'kovan': 'https://kovan.etherscan.io',     
+  'rinkeby': 'https://rinkeby.etherscan.io', 
+};
+
 // Simple in-memory ENS cache with 1-hour expiration
 export const ENS_CACHE = new Map<string, { name: string | null, timestamp: number }>();
 export const ENS_CACHE_TTL = 60 * 60 * 24 * 1000;  // 1 day in milliseconds

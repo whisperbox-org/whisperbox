@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wallet, ChevronDown, Check, Copy, ExternalLink, LogOut } from 'lucide-react';
+import { Wallet, ChevronDown, Check, Copy, ExternalLink, LogOut, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { walletService } from '@/lib/wallet';
-
+import { ETHERSCAN_URLS } from '@/config/wallet';
 
 const WalletConnect: React.FC = () => {
   const [isConnected, setIsConnected] = useState(false);
@@ -11,9 +11,21 @@ const WalletConnect: React.FC = () => {
   const [ensName, setENSName] = useState<string | null>(null);
   const [walletBalance, setWalletBalance] = useState('');
   const [networkName, setNetworkName] = useState('');
+  const [chainId, setChainId] = useState<string | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [connectingStatus, setConnectingStatus] = useState<'idle' | 'connecting' | 'success'>('idle');
   const { toast } = useToast();
+
+  const getEtherscanUrl = (): { url: string | null; supported: boolean } => {
+    if (!networkName && !chainId) return { url: null, supported: false };
+    
+    const normalizedNetworkName = networkName.toLowerCase();
+    if (ETHERSCAN_URLS[normalizedNetworkName]) {
+      return { url: ETHERSCAN_URLS[normalizedNetworkName], supported: true };
+    }
+    
+    return { url: null, supported: false };
+  };
 
   useEffect(() => {
     const storedWallet = walletService.getConnectedWallet();
@@ -68,6 +80,8 @@ const WalletConnect: React.FC = () => {
       try {
         const network = await walletService.getNetwork();
         setNetworkName(network.name === 'homestead' ? 'Ethereum' : network.name);
+        setChainId(network.chainId.toString());
+        
         // Refresh balance as it might change with network
         if (walletAddress) {
           const balance = await walletService.getBalance(walletAddress);
@@ -92,6 +106,7 @@ const WalletConnect: React.FC = () => {
       // Get network info
       const network = await walletService.getNetwork();
       setNetworkName(network.name === 'homestead' ? 'Ethereum' : network.name);
+      setChainId(network.chainId.toString());
     } catch (error) {
       console.error('Error fetching wallet info:', error);
     }
@@ -164,6 +179,20 @@ const WalletConnect: React.FC = () => {
 
   const formatAddress = (address: string) => {
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+  };
+
+  const etherscanInfo = getEtherscanUrl();
+
+  const handleEtherscanClick = (e: React.MouseEvent) => {
+    if (!etherscanInfo.supported) {
+      e.preventDefault();
+      toast({
+        title: "Network not supported",
+        description: `Etherscan does not support the ${networkName} network.`,
+        variant: "destructive",
+      });
+      setIsDropdownOpen(false);
+    }
   };
 
   return (
@@ -242,15 +271,25 @@ const WalletConnect: React.FC = () => {
                     <Copy className="w-4 h-4 mr-2" />
                     Copy Address
                   </button>
-                  <a
-                    href={`https://etherscan.io/address/${walletAddress}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-secondary transition-colors flex items-center"
-                  >
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    View on Etherscan
-                  </a>
+                  {etherscanInfo.supported ? (
+                    <a
+                      href={`${etherscanInfo.url}/address/${walletAddress}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-secondary transition-colors flex items-center"
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      View on Etherscan
+                    </a>
+                  ) : (
+                    <button
+                      onClick={handleEtherscanClick}
+                      className="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-secondary transition-colors flex items-center text-yellow-600"
+                    >
+                      <AlertCircle className="w-4 h-4 mr-2" />
+                      View on Etherscan (Unsupported Network)
+                    </button>
+                  )}
                   <button
                     className="w-full text-left px-3 py-2 rounded-lg text-sm text-red-500 hover:bg-red-50 transition-colors flex items-center"
                     onClick={handleDisconnect}
