@@ -11,7 +11,7 @@ import {
   updateStoredForm,
   loadStoredForm
 } from '@/lib/formStore';
-import { getConnectedWallet } from '@/lib/wallet';
+import { walletService } from '@/lib/wallet';
 import AnimatedTransition from '@/components/AnimatedTransition';
 import { useToast } from '@/hooks/use-toast';
 import { FormType, StoredFormType } from '@/types';
@@ -57,7 +57,7 @@ const View: React.FC = () => {
       setForm(foundForm);
       setFormUrl(`${window.location.origin}/view/${id}`);
       
-      const wallet = getConnectedWallet();
+      const wallet = walletService.getConnectedWallet();
       
       // If the form has no access control, grant access immediately
       if (foundForm.whitelist.type === 'none') {
@@ -484,7 +484,7 @@ const View: React.FC = () => {
               ) : (
                 // No access control - anyone with a connected wallet can view and submit
                 <div>
-                  {!getConnectedWallet() ? (
+                  {!walletService.getConnectedWallet() ? (
                     <div className="flex flex-col items-center justify-center p-8 bg-background border border-border rounded-xl shadow-sm">
                       <Shield className="w-10 h-10 text-amber-500 mb-4" />
                       <h3 className="text-xl font-medium mb-2">Wallet Connection Required</h3>

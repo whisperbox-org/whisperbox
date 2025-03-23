@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Send, Lock, AlertTriangle, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { FormType } from '@/types/form';
-import { formatMessageToSign, getConnectedWallet, signMessage } from '@/lib/wallet';
+import { walletService } from '@/lib/wallet';
 import { loadResponse, submitAndPersistResponse, toHexString } from '@/lib/formStore';
 import { randomBytes } from 'ethers';
 import { useWakuContext } from '@/hooks/useWakuHooks';
@@ -90,7 +90,7 @@ const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
     }
     
     // Always require wallet connection for all forms
-    const walletAddress = getConnectedWallet();
+    const walletAddress = walletService.getConnectedWallet();
     if (!walletAddress) {
       toast({
         title: "Wallet not connected",
@@ -123,7 +123,7 @@ const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
       
       // For non-public forms, sign message for authentication
       if (form.whitelist.type !== 'none') {
-        signature = await signMessage(formatMessageToSign(form.id, walletAddress, now));
+        signature = await walletService.signMessage(walletService.formatMessageToSign(form.id, walletAddress, now));
       }
       
       // Submit the response with the wallet address

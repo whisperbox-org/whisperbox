@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { ClientEvents } from '@/lib/waku';
 import { useToast } from './use-toast';
-import { getConnectedWallet, getENS } from '@/lib/wallet';
+import { walletService } from '@/lib/wallet';
 import { FormType, FormSubmissionParams } from '@/types/form';
 import { useNavigate } from 'react-router-dom';
 import { useWakuContext } from './useWakuHooks';
@@ -18,7 +18,7 @@ interface ResponseNotification {
 export const useFormResponseNotifications = () => {
   const { client } = useWakuContext();
   const { toast } = useToast();
-  const walletAddress = getConnectedWallet();
+  const walletAddress = walletService.getConnectedWallet();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -31,7 +31,7 @@ export const useFormResponseNotifications = () => {
         // Format respondent address for display
         const respondentDisplay = 
           `${response.respondent.substring(0, 6)}...${response.respondent.substring(response.respondent.length - 4)}`;
-        const respondentEns = await getENS(response.respondent)
+        const respondentEns = await walletService.getENS(response.respondent)
 
         const formLink = `/view/${form.id}`;
 

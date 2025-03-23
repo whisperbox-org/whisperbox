@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Minus, Trash2, Save, HelpCircle, AlignLeft, CheckSquare, ListChecks, FileText, Globe, Shield, Users, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { FormQuestion } from '@/types/form';
-import { getConnectedWallet, signMessage, formatFormCreationMessage } from '@/lib/wallet';
+import { walletService } from '@/lib/wallet';
 import { useNavigate } from 'react-router-dom';
 import { createForm } from '@/lib/formStore';
 import { FORM_CONFIG } from '@/config/form';
@@ -102,7 +102,7 @@ const FormCreator: React.FC = () => {
       return
     }
     
-    const walletAddress = getConnectedWallet();
+    const walletAddress = walletService.getConnectedWallet();
     if (!walletAddress) {
       toast({
         title: "Wallet not connected",
@@ -178,8 +178,8 @@ const FormCreator: React.FC = () => {
       // Create a signature to verify the form creator
       let signature;
       try {
-        const messageToSign = formatFormCreationMessage(title, walletAddress, timestamp);
-        signature = await signMessage(messageToSign);
+        const messageToSign = walletService.formatFormCreationMessage(title, walletAddress, timestamp);
+        signature = await walletService.signMessage(messageToSign);
       } catch (error) {
         toast({
           title: "Signature Error",

@@ -2,7 +2,7 @@
 // In a real implementation, this would be stored encrypted and distributed
 
 import { FormType, FormResponse, FormCreationParams, FormSubmissionParams, StoredForm, StoredFormType } from '@/types/form';
-import { checkNFTOwnership, formatMessageToSign, getConnectedWallet, getENS, recoverAddress, formatFormCreationMessage } from './wallet';
+import { walletService } from './wallet';
 import { FORM_CONFIG } from '@/config/form';
 import { STORAGE_KEYS } from '@/config/storage';
 import { sha256 } from 'ethers';
@@ -23,14 +23,14 @@ export const validateFormCreator = (form: FormType): { valid: boolean; error?: s
     return { valid: false, error: "Form signature is missing" };
   }
   
-  const messageToSign = formatFormCreationMessage(
+  const messageToSign = walletService.formatFormCreationMessage(
     form.title,
     form.creator,
     form.createdAt
   );
   
   try {
-    const recoveredAddress = recoverAddress(messageToSign, form.signature);
+    const recoveredAddress = walletService.recoverAddress(messageToSign, form.signature);
     if (recoveredAddress.toLowerCase() !== form.creator.toLowerCase()) {
       return { valid: false, error: "Signature does not match creator address" };
     }
@@ -74,7 +74,7 @@ export const createForm = (form: FormCreationParams): FormType => {
 
 export const addForm = (form: FormType) => {
   let loaded = false
-  const wallet = getConnectedWallet()
+  const wallet = walletService.getConnectedWallet()
   if (form.creator == wallet) {
     try {
       form.privateKey = loadStoredForm(form.id).privateKey
@@ -141,7 +141,10 @@ export const submitResponse = async (response: FormSubmissionParams): Promise<Fo
       throw new Error("Missing signature")
     }
 
-    const recoveredAddress = recoverAddress(formatMessageToSign(response.formId, response.respondent, response.submittedAt), response.signature)
+    const recoveredAddress = walletService.recoverAddress(
+      walletService.formatMessageToSign(response.formId, response.respondent, response.submittedAt), 
+      response.signature
+    )
 
     if (response.respondent.toLowerCase() != recoveredAddress.toLowerCase()) {
       throw new Error('Respondent does not match the signature')
@@ -155,7 +158,7 @@ export const submitResponse = async (response: FormSubmissionParams): Promise<Fo
   const newResponse: FormResponse = {
     ...response,
     id: `r${Date.now()}`,
-    respondentENS: await getENS(response.respondent),
+    respondentENS: await walletService.getENS(response.respondent),
   };
   
   if (forms[formIndex].responses.findIndex(r => r.respondent.toLowerCase() == response.respondent.toLowerCase()) != -1) {
@@ -209,7 +212,7 @@ export const canAccessForm = async (formIdOrForm: string | FormType, userAddress
   // Check whitelist
   if (form.whitelist.type === FORM_CONFIG.WHITELIST_TYPES.NFT) {
     // Use the imported checkNFTOwnership function directly
-    return checkNFTOwnership(userAddress, form.whitelist.value);
+    return walletService.checkNFTOwnership(userAddress, form.whitelist.value);
   } else if (form.whitelist.type === FORM_CONFIG.WHITELIST_TYPES.ADDRESSES) {
     // Check if the address is in the whitelist
     const whitelist = form.whitelist.value.split(',').map(addr => addr.trim().toLowerCase());

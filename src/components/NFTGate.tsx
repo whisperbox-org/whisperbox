@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, ShieldX, AlertTriangle, Loader } from 'lucide-react';
-import { checkNFTOwnership, getConnectedWallet } from '@/lib/wallet';
+import { walletService } from '@/lib/wallet';
 import { UI_CONFIG } from '@/config/ui';
 
 interface NFTGateProps {
@@ -22,7 +22,7 @@ const NFTGate: React.FC<NFTGateProps> = ({
   useEffect(() => {
     const verifyAccess = async () => {
       setIsVerifying(true);
-      const address = getConnectedWallet();
+      const address = walletService.getConnectedWallet();
       setWalletAddress(address);
       
       if (!address) {
@@ -32,7 +32,7 @@ const NFTGate: React.FC<NFTGateProps> = ({
       }
       
       try {
-        const hasNFT = await checkNFTOwnership(address, contractAddress);
+        const hasNFT = await walletService.checkNFTOwnership(address, contractAddress);
         setHasAccess(hasNFT);
       } catch (error) {
         console.error('Error checking NFT ownership:', error);

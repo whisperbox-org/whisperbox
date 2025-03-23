@@ -9,7 +9,7 @@ import {
     Protocols
 } from "@waku/interfaces"
 import { WakuClient } from "@/lib/waku";
-import { getConnectedWallet } from "@/lib/wallet";
+import { walletService } from "@/lib/wallet";
 import { BOOTSTRAP_NODES, NETWORK_CONFIG } from "@/config/waku";
 import { WakuContext } from "@/contexts/WakuContext";
 
@@ -25,7 +25,7 @@ export const WakuContextProvider = ({ children, updateStatus }: Props) => {
     const [node, setNode] = useState<LightNode>()
     const [health, setHealth] = useState<HealthStatus>(HealthStatus.Unhealthy)
     const [ client, setClient ] = useState<WakuClient | undefined>(undefined)
-    const address = getConnectedWallet();
+    const address = walletService.getConnectedWallet();
 
 
 
