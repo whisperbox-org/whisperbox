@@ -111,17 +111,19 @@ export const addConfirmation = (formId: string, confirmationId: string) => {
 
 // Get all forms
 export const getAllForms = (): FormType[] => {
-  return forms;
+  return forms.map(form => normalizeQuestionType(form));
 };
 
 // Get forms created by a specific address
 export const getFormsByCreator = (creator: string): FormType[] => {
-  return forms.filter(form => form.creator.toLowerCase() === creator.toLowerCase() && form.privateKey);
+  return forms.filter(form => form.creator.toLowerCase() === creator.toLowerCase() && form.privateKey)
+    .map(form => normalizeQuestionType(form));
 };
 
 // Get a specific form
 export const getFormById = (id: string): FormType | undefined => {
-  return forms.find(form => form.id === id);
+  const form = forms.find(f => f.id === id);
+  return form ? normalizeQuestionType(form) : undefined;
 };
 
 // Submit a response to a form
@@ -332,3 +334,46 @@ export function toByteArray(hexString: string) {
   }
   return result;
 }
+
+// Define an interface for the legacy form question type for backward compatibility
+interface LegacyFormQuestion {
+  id: string;
+  type: 'text' | 'textarea' | 'multipleChoice' | 'checkbox';
+  text: string;
+  required: boolean;
+  options?: string[];
+}
+
+// Ensure backwards compatibility with old forms that use 'multipleChoice' instead of 'radioButtons'
+const normalizeQuestionType = (form: FormType): FormType => {
+  const normalizedQuestions = form.questions.map(question => {
+    // Cast to the legacy type for backward compatibility
+    const legacyQuestion = question as unknown as LegacyFormQuestion;
+    if (legacyQuestion.type === 'multipleChoice') {
+      return {
+        ...question,
+        type: 'radioButtons' as const
+      };
+    }
+    return question;
+  });
+
+  return {
+    ...form,
+    questions: normalizedQuestions
+  };
+};
+
+// Add normalization to existing functions that retrieve forms
+export const getForm = async (formId: string): Promise<FormType | null> => {
+  try {
+    // ... existing code to retrieve the form ...
+    
+    // Apply normalization before returning
+    const form = await getFormById(formId);
+    return form ? normalizeQuestionType(form) : null;
+  } catch (error) {
+    console.error("Error retrieving form:", error);
+    return null;
+  }
+};

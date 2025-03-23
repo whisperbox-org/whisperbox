@@ -288,7 +288,7 @@ const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
                 />
               )}
               
-              {question.type === 'multipleChoice' && (
+              {question.type === 'radioButtons' && (
                 <div className="space-y-3 ml-2 mt-2">
                   {question.options?.map((option, optionIndex) => (
                     <label key={`${question.id}-option-${optionIndex}`} className="flex items-center p-2 hover:bg-secondary/30 rounded-md transition-colors cursor-pointer">
