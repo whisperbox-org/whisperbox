@@ -10,10 +10,7 @@ export const ERC721_ABI = [
 ];
 
 // Wallet configuration
-export const WALLET_CONFIG = {
-  // Storage key for session persistence
-  STORAGE_KEY: 'secureform-wallet',
-  
+export const WALLET_CONFIG = {  
   // ERC-721 ABI for NFT ownership checks
   ERC721_ABI: ERC721_ABI,
 }; 

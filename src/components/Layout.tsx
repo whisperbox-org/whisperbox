@@ -3,7 +3,7 @@ import Navbar from './Navbar';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useLocation, useParams } from 'react-router-dom';
 import { useFormResponseNotifications } from '@/hooks/useFormResponseNotifications';
-import { useWakuContext } from '@/hooks/useWaku';
+import { useWakuContext } from '@/hooks/useWakuHooks';
 
 interface LayoutProps {
   children: React.ReactNode;

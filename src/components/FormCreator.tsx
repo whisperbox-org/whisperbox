@@ -7,7 +7,7 @@ import { getConnectedWallet, signMessage, formatFormCreationMessage } from '@/li
 import { useNavigate } from 'react-router-dom';
 import { createForm } from '@/lib/formStore';
 import { FORM_CONFIG } from '@/config/form';
-import { useWakuContext } from '@/hooks/useWaku';
+import { useWakuContext } from '@/hooks/useWakuHooks';
 
 const FormCreator: React.FC = () => {
   const navigate = useNavigate();

@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Send, Lock, AlertTriangle, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { FormSubmissionParams, FormType } from '@/types/form';
+import { FormType } from '@/types/form';
 import { formatMessageToSign, getConnectedWallet, signMessage } from '@/lib/wallet';
-import { loadResponse, submitAndPersistResponse, submitResponse, toHexString } from '@/lib/formStore';
-import { useWakuContext } from '@/hooks/useWaku';
+import { loadResponse, submitAndPersistResponse, toHexString } from '@/lib/formStore';
 import { randomBytes } from 'ethers';
+import { useWakuContext } from '@/hooks/useWakuHooks';
 
 
 interface FormResponseProps {

@@ -15,8 +15,8 @@ import { getConnectedWallet } from '@/lib/wallet';
 import AnimatedTransition from '@/components/AnimatedTransition';
 import { useToast } from '@/hooks/use-toast';
 import { FormType, StoredFormType } from '@/types';
-import { useWakuContext } from '@/hooks/useWaku';
 import { ClientEvents } from '@/lib/waku';
+import { useWakuContext } from '@/hooks/useWakuHooks';
 
 const View: React.FC = () => {
   const { id } = useParams<{ id: string }>();

@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
-import { useWakuContext } from './useWaku';
 import { ClientEvents } from '@/lib/waku';
 import { useToast } from './use-toast';
 import { getConnectedWallet, getENS } from '@/lib/wallet';
 import { FormType, FormSubmissionParams } from '@/types/form';
 import { useNavigate } from 'react-router-dom';
+import { useWakuContext } from './useWakuHooks';
 
 interface ResponseNotification {
   form: FormType;
