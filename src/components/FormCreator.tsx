@@ -51,7 +51,7 @@ const FormCreator: React.FC = () => {
     }
     
     // If changing type to multipleChoice or checkbox and no options exist, add some defaults
-    if (field === 'type' && (value === FORM_CONFIG.QUESTION_TYPES.MULTIPLE_CHOICE || value === FORM_CONFIG.QUESTION_TYPES.CHECKBOX) && (!updatedQuestions[index].options || updatedQuestions[index].options!.length === 0)) {
+    if (field === 'type' && (value === FORM_CONFIG.QUESTION_TYPES.RADIO_BUTTONS || value === FORM_CONFIG.QUESTION_TYPES.CHECKBOX) && (!updatedQuestions[index].options || updatedQuestions[index].options!.length === 0)) {
       updatedQuestions[index].options = ['', ''];
     }
     
@@ -134,7 +134,7 @@ const FormCreator: React.FC = () => {
       }
       
       // Check if options exist and have at least 2 items for choice-based questions
-      if ((questions[i].type === FORM_CONFIG.QUESTION_TYPES.MULTIPLE_CHOICE || questions[i].type === FORM_CONFIG.QUESTION_TYPES.CHECKBOX)) {
+      if ((questions[i].type === FORM_CONFIG.QUESTION_TYPES.RADIO_BUTTONS || questions[i].type === FORM_CONFIG.QUESTION_TYPES.CHECKBOX)) {
         const options = questions[i].options;
         if (!options || options.length < 2) {
           toast({
@@ -268,7 +268,7 @@ const FormCreator: React.FC = () => {
         return <FileText className="w-4 h-4" />;
       case FORM_CONFIG.QUESTION_TYPES.TEXTAREA:
         return <AlignLeft className="w-4 h-4" />;
-      case FORM_CONFIG.QUESTION_TYPES.MULTIPLE_CHOICE:
+      case FORM_CONFIG.QUESTION_TYPES.RADIO_BUTTONS:
         return <ListChecks className="w-4 h-4" />;
       case FORM_CONFIG.QUESTION_TYPES.CHECKBOX:
         return <CheckSquare className="w-4 h-4" />;
@@ -383,8 +383,8 @@ const FormCreator: React.FC = () => {
                       >
                         <option value={FORM_CONFIG.QUESTION_TYPES.TEXT}>Short Text</option>
                         <option value={FORM_CONFIG.QUESTION_TYPES.TEXTAREA}>Paragraph</option>
-                        <option value={FORM_CONFIG.QUESTION_TYPES.MULTIPLE_CHOICE}>Multiple Choice</option>
-                        <option value={FORM_CONFIG.QUESTION_TYPES.CHECKBOX}>Checkboxes</option>
+                        <option value={FORM_CONFIG.QUESTION_TYPES.RADIO_BUTTONS}>Radio Buttons (Single Choice)</option>
+                        <option value={FORM_CONFIG.QUESTION_TYPES.CHECKBOX}>Checkboxes (Multiple Choice)</option>
                       </select>
                     </div>
                   </div>
@@ -409,12 +409,12 @@ const FormCreator: React.FC = () => {
                 />
               </div>
               
-              {(question.type === FORM_CONFIG.QUESTION_TYPES.MULTIPLE_CHOICE || question.type === FORM_CONFIG.QUESTION_TYPES.CHECKBOX) && (
+              {(question.type === FORM_CONFIG.QUESTION_TYPES.RADIO_BUTTONS || question.type === FORM_CONFIG.QUESTION_TYPES.CHECKBOX) && (
                 <div className="space-y-2 ml-2">
                   {question.options?.map((option, optionIndex) => (
                     <div key={`${question.id}-option-${optionIndex}`} className="flex items-center">
                       <div className="w-5 mr-2 flex justify-center">
-                        {question.type === FORM_CONFIG.QUESTION_TYPES.MULTIPLE_CHOICE ? (
+                        {question.type === FORM_CONFIG.QUESTION_TYPES.RADIO_BUTTONS ? (
                           <span className="w-3.5 h-3.5 rounded-full border border-muted-foreground/40 inline-block" />
                         ) : (
                           <span className="w-3.5 h-3.5 rounded-sm border border-muted-foreground/40 inline-block" />

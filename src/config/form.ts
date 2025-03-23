@@ -21,7 +21,7 @@ const WHITELIST_TYPES = {
 const QUESTION_TYPES = {
   TEXT: 'text',
   TEXTAREA: 'textarea',
-  MULTIPLE_CHOICE: 'multipleChoice',
+  RADIO_BUTTONS: 'radioButtons',
   CHECKBOX: 'checkbox',
 } as const; 
 

@@ -4,10 +4,10 @@
 
 export interface FormQuestion {
   id: string;
-  type: 'text' | 'textarea' | 'multipleChoice' | 'checkbox';
+  type: 'text' | 'textarea' | 'radioButtons' | 'checkbox';
   text: string;
   required: boolean;
-  options?: string[]; // For multiple choice or checkbox
+  options?: string[]; // For radio buttons (single selection) or checkboxes (multiple selection)
 }
 
 export interface FormType {
