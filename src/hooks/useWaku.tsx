@@ -3,12 +3,10 @@ import {
     createLightNode,
     createDecoder,
     LightNode,
-    EConnectionStateEvents,
   } from "@waku/sdk";
 import {
     HealthStatus,
     HealthStatusChangeEvents,
-    IWaku,
     Protocols
 } from "@waku/interfaces"
 import { WakuClient } from "@/lib/waku";
@@ -91,6 +89,7 @@ export const WakuContextProvider = ({ children, updateStatus }: Props) => {
                     updateStatus("Waku node successfully connected", "success", 5000)
                     console.log(await ln.libp2p.peerStore.all())
                     ln.health.addEventListener(HealthStatusChangeEvents.StatusChange, (hs) => {
+                        console.log("Setting health to ", hs.detail)
                             setHealth(hs.detail)
                         })
 
