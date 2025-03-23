@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { PlusCircle, FileQuestion, Loader, Lock, ClipboardCheck, Inbox, EyeOff, PenLine } from 'lucide-react';
+import { PlusCircle, FileQuestion, Loader, Lock, ClipboardCheck, Inbox, EyeOff, PenLine, Earth } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import FormCard from '@/components/FormCard';
@@ -13,7 +13,7 @@ import { ClientEvents } from '@/lib/waku';
 import { getAllPublicForms, getPublicFormsFeedOption, setPublicFormsFeedOption } from '@/lib/publicFormFeed';
 
 // Define tab types for better type safety
-type TabType = 'created' | 'accessible' | 'participated' | 'viewed';
+type TabType = 'created' | 'accessible' | 'participated' | 'viewed' | 'publicFeed';
 
 const Forms: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('created');
@@ -146,6 +146,12 @@ const Forms: React.FC = () => {
       label: 'Viewed',
       icon: <EyeOff className="w-4 h-4 mr-2" />,
       count: viewedForms.length 
+    },
+    { 
+      id: 'publicFeed', 
+      label: 'Public Feed',
+      icon: <Earth className="w-4 h-4 mr-2" />,
+      count: publicForms.length 
     }
   ];
 
@@ -242,6 +248,29 @@ const Forms: React.FC = () => {
             )}
           </>
         );
+      case 'publicFeed':
+        return (
+          <>
+            {publicForms.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {publicForms.map((form, index) => (
+                <FormCard key={form.id} form={form} delay={index} />
+              ))}
+            </div>
+          ): (
+            <div>Would you like see new public forms? 
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="mt-4 md:mt-0 px-4 py-2 bg-primary text-white rounded-lg shadow-sm flex items-center"
+                onClick={() => setEnablePublicFormsFeed(true)}
+              >
+                Enable Public Forms Feed
+              </motion.button>
+            </div>
+          )}
+          </>
+        )
       default:
         return null;
     }
@@ -258,6 +287,8 @@ const Forms: React.FC = () => {
         return "Forms you've already submitted responses to";
       case 'viewed':
         return "Forms you've viewed but haven't submitted responses to";
+      case 'publicFeed':
+        return "Public forms where anyone can participate"
       default:
         return "";
     }
