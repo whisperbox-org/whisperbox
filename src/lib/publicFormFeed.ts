@@ -29,18 +29,3 @@ export const getPublicFormById = (id:string): FormType | undefined => {
 
     return undefined
 }
-
-const publicFormsFeedOption_key = "whisperbox_publicFormsFeed"
-export const setPublicFormsFeedOption = (val: boolean) => {
-    localStorage.setItem(publicFormsFeedOption_key, JSON.stringify(val))
-}
-
-export const getPublicFormsFeedOption = ():boolean => {
-    const opt = localStorage.getItem(publicFormsFeedOption_key)
-
-    if (opt && JSON.parse(opt) == true) {
-        return true
-    }
-
-    return false
-}

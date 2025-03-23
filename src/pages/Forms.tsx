@@ -10,7 +10,7 @@ import AnimatedTransition from '@/components/AnimatedTransition';
 import { getAllForms, getFormsByCreator, getStoredForms} from '@/lib/formStore';
 import { useWakuContext } from '@/hooks/useWakuHooks';
 import { ClientEvents } from '@/lib/waku';
-import { getAllPublicForms, getPublicFormsFeedOption, setPublicFormsFeedOption } from '@/lib/publicFormFeed';
+import { getAllPublicForms } from '@/lib/publicFormFeed';
 
 // Define tab types for better type safety
 type TabType = 'created' | 'accessible' | 'participated' | 'viewed' | 'publicFeed';
@@ -27,8 +27,6 @@ const Forms: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [walletConnected, setWalletConnected] = useState(false);
   const {client, connected} = useWakuContext()
-
-  const [enablePublicFormsFeed, setEnablePublicFormsFeed] = useState(getPublicFormsFeedOption())
 
   useEffect(() => {
     const loadForms = async () => {
@@ -76,7 +74,7 @@ const Forms: React.FC = () => {
   }, [connected, client]);
 
   useEffect(() => {
-    if (!connected || !enablePublicFormsFeed || !client) {
+    if (!connected || !client) {
       setPublicForms([])
       return
     }
@@ -90,7 +88,7 @@ const Forms: React.FC = () => {
     loadPublicForms()
     if (client)
       client.on(ClientEvents.NEW_PUBLIC_FORM, loadPublicForms)
-  }, [enablePublicFormsFeed, client, connected])
+  }, [client, connected])
 
   if (loading) {
     return (
@@ -258,15 +256,12 @@ const Forms: React.FC = () => {
               ))}
             </div>
           ): (
-            <div>Would you like see new public forms? 
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="mt-4 md:mt-0 px-4 py-2 bg-primary text-white rounded-lg shadow-sm flex items-center"
-                onClick={() => setEnablePublicFormsFeed(true)}
-              >
-                Enable Public Forms Feed
-              </motion.button>
+            <div className="glassmorphism rounded-xl p-8 text-center max-w-2xl mx-auto mt-8">
+              <FileQuestion className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold mb-2">No public forms yet</h3>
+              <p className="text-muted-foreground">
+                There are no public forms available
+              </p>
             </div>
           )}
           </>
