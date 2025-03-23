@@ -7,7 +7,16 @@ import { walletService } from '@/lib/wallet';
 import { loadResponse, submitAndPersistResponse, toHexString } from '@/lib/formStore';
 import { randomBytes } from 'ethers';
 import { useWakuContext } from '@/hooks/useWakuHooks';
-
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface FormResponseProps {
   form: FormType;
@@ -21,6 +30,7 @@ const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   useEffect(() => {
     if (form) {
@@ -77,7 +87,7 @@ const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
     return Object.keys(errors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) {
@@ -109,8 +119,32 @@ const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
       return;
     }
     
+    setShowConfirmDialog(true);
+  };
+
+  const handleSubmit = async () => {
     try {
       setSubmitting(true);
+      setShowConfirmDialog(false);
+      
+      const walletAddress = walletService.getConnectedWallet();
+      if (!walletAddress) {
+        toast({
+          title: "Wallet not connected",
+          description: "Please connect your wallet to submit this form",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!client || !connected) {
+        toast({
+          title: "Waku Client not connected",
+          description: "Please try again or reload the page",
+          variant: "destructive",
+        });
+        return;
+      }
       
       // Create formatted answers array
       const formattedAnswers = Object.entries(answers).map(([questionId, value]) => ({
@@ -191,131 +225,158 @@ const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
-      <div className="bg-secondary/30 rounded-lg p-4 flex items-start">
-        <AlertTriangle className="w-5 h-5 text-amber-500 mr-3 mt-0.5 flex-shrink-0" />
-        <div>
-          <p className="text-sm">
-            {form.whitelist.type === 'none' 
-              ? "This is a public form. While wallet connection is required, no additional verification will be performed."
-              : "All responses are end-to-end encrypted and can only be viewed by the form creator. Your data will not be stored on any centralized server."
-            }
-          </p>
+    <>
+      <form onSubmit={handleFormSubmit} className="space-y-8">
+        <div className="bg-secondary/30 rounded-lg p-4 flex items-start">
+          <AlertTriangle className="w-5 h-5 text-amber-500 mr-3 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="text-sm">
+              {form.whitelist.type === 'none' 
+                ? "This is a public form. While wallet connection is required, no additional verification will be performed."
+                : "All responses are end-to-end encrypted and can only be viewed by the form creator. Your data will not be stored on any centralized server."
+              }
+            </p>
+          </div>
         </div>
-      </div>
-      
-      <div className="space-y-6">
-        {form.questions.map((question) => (
-          <motion.div 
-            key={question.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="p-5 rounded-xl border border-border bg-background shadow-sm hover:shadow transition-shadow"
+        
+        <div className="space-y-6">
+          {form.questions.map((question) => (
+            <motion.div 
+              key={question.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="p-5 rounded-xl border border-border bg-background shadow-sm hover:shadow transition-shadow"
+            >
+              <div className="mb-3 flex items-start">
+                <div className="flex-1">
+                  <label className="block text-base font-medium">
+                    {question.text}
+                    {question.required && <span className="text-red-500 ml-1">*</span>}
+                  </label>
+                </div>
+              </div>
+              
+              {question.type === 'text' && (
+                <input
+                  type="text"
+                  value={(answers[question.id] as string) || ''}
+                  onChange={(e) => handleInputChange(question.id, e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      toast({
+                        title: "Single line only",
+                        description: "Short text fields support only one line of text.",
+                        variant: "default",
+                      });
+                    }
+                  }}
+                  className={`w-full px-4 py-2 rounded-lg border bg-background form-input-focus
+                    ${validationErrors[question.id] ? 'border-red-500 ring-1 ring-red-500/20' : 'border-border'}`}
+                  placeholder="Your answer"
+                />
+              )}
+              
+              {question.type === 'textarea' && (
+                <textarea
+                  value={(answers[question.id] as string) || ''}
+                  onChange={(e) => handleInputChange(question.id, e.target.value)}
+                  className={`w-full px-4 py-2 rounded-lg border bg-background form-input-focus min-h-[100px] resize-y
+                    ${validationErrors[question.id] ? 'border-red-500 ring-1 ring-red-500/20' : 'border-border'}`}
+                  placeholder="Your answer"
+                />
+              )}
+              
+              {question.type === 'multipleChoice' && (
+                <div className="space-y-3 ml-2 mt-2">
+                  {question.options?.map((option, optionIndex) => (
+                    <label key={`${question.id}-option-${optionIndex}`} className="flex items-center p-2 hover:bg-secondary/30 rounded-md transition-colors cursor-pointer">
+                      <div className="relative flex items-center">
+                        <input
+                          type="radio"
+                          name={question.id}
+                          value={option}
+                          checked={(answers[question.id] as string) === option}
+                          onChange={() => handleInputChange(question.id, option)}
+                          className="w-4 h-4 border-2 border-border cursor-pointer"
+                        />
+                        <span className="ml-3">{option}</span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              )}
+              
+              {question.type === 'checkbox' && (
+                <div className="space-y-3 ml-2 mt-2">
+                  {question.options?.map((option, optionIndex) => (
+                    <label key={`${question.id}-option-${optionIndex}`} className="flex items-center p-2 hover:bg-secondary/30 rounded-md transition-colors cursor-pointer">
+                      <div className="relative flex items-center">
+                        <input
+                          type="checkbox"
+                          value={option}
+                          checked={Array.isArray(answers[question.id]) && (answers[question.id] as string[]).includes(option)}
+                          onChange={(e) => handleCheckboxChange(question.id, option, e.target.checked)}
+                          className="w-4 h-4 border-2 border-border rounded cursor-pointer"
+                        />
+                        <span className="ml-3">{option}</span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              )}
+              
+              {validationErrors[question.id] && (
+                <p className="text-red-500 text-sm mt-2 flex items-center">
+                  <AlertTriangle className="w-4 h-4 mr-1.5" />
+                  {validationErrors[question.id]}
+                </p>
+              )}
+            </motion.div>
+          ))}
+        </div>
+        
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            disabled={submitting}
+            className={`px-6 py-3 rounded-lg bg-primary text-primary-foreground font-medium flex items-center shadow-sm
+              ${submitting ? 'opacity-80 cursor-wait' : 'button-hover'}`}
           >
-            <div className="mb-3 flex items-start">
-              <div className="flex-1">
-                <label className="block text-base font-medium">
-                  {question.text}
-                  {question.required && <span className="text-red-500 ml-1">*</span>}
-                </label>
-              </div>
-            </div>
-            
-            {question.type === 'text' && (
-              <input
-                type="text"
-                value={(answers[question.id] as string) || ''}
-                onChange={(e) => handleInputChange(question.id, e.target.value)}
-                className={`w-full px-4 py-2 rounded-lg border bg-background form-input-focus
-                  ${validationErrors[question.id] ? 'border-red-500 ring-1 ring-red-500/20' : 'border-border'}`}
-                placeholder="Your answer"
-              />
+            {submitting ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                {form.whitelist.type === 'none' ? 'Submitting...' : 'Encrypting & Submitting...'}
+              </>
+            ) : (
+              <>
+                <Send className="w-4 h-4 mr-2" />
+                Submit Response
+              </>
             )}
-            
-            {question.type === 'textarea' && (
-              <textarea
-                value={(answers[question.id] as string) || ''}
-                onChange={(e) => handleInputChange(question.id, e.target.value)}
-                className={`w-full px-4 py-2 rounded-lg border bg-background form-input-focus min-h-[100px] resize-y
-                  ${validationErrors[question.id] ? 'border-red-500 ring-1 ring-red-500/20' : 'border-border'}`}
-                placeholder="Your answer"
-              />
-            )}
-            
-            {question.type === 'multipleChoice' && (
-              <div className="space-y-3 ml-2 mt-2">
-                {question.options?.map((option, optionIndex) => (
-                  <label key={`${question.id}-option-${optionIndex}`} className="flex items-center p-2 hover:bg-secondary/30 rounded-md transition-colors cursor-pointer">
-                    <div className="relative flex items-center">
-                      <input
-                        type="radio"
-                        name={question.id}
-                        value={option}
-                        checked={(answers[question.id] as string) === option}
-                        onChange={() => handleInputChange(question.id, option)}
-                        className="w-4 h-4 border-2 border-border cursor-pointer"
-                      />
-                      <span className="ml-3">{option}</span>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            )}
-            
-            {question.type === 'checkbox' && (
-              <div className="space-y-3 ml-2 mt-2">
-                {question.options?.map((option, optionIndex) => (
-                  <label key={`${question.id}-option-${optionIndex}`} className="flex items-center p-2 hover:bg-secondary/30 rounded-md transition-colors cursor-pointer">
-                    <div className="relative flex items-center">
-                      <input
-                        type="checkbox"
-                        value={option}
-                        checked={Array.isArray(answers[question.id]) && (answers[question.id] as string[]).includes(option)}
-                        onChange={(e) => handleCheckboxChange(question.id, option, e.target.checked)}
-                        className="w-4 h-4 border-2 border-border rounded cursor-pointer"
-                      />
-                      <span className="ml-3">{option}</span>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            )}
-            
-            {validationErrors[question.id] && (
-              <p className="text-red-500 text-sm mt-2 flex items-center">
-                <AlertTriangle className="w-4 h-4 mr-1.5" />
-                {validationErrors[question.id]}
-              </p>
-            )}
-          </motion.div>
-        ))}
-      </div>
-      
-      <div className="flex justify-end">
-        <button
-          type="submit"
-          disabled={submitting}
-          className={`px-6 py-3 rounded-lg bg-primary text-primary-foreground font-medium flex items-center shadow-sm
-            ${submitting ? 'opacity-80 cursor-wait' : 'button-hover'}`}
-        >
-          {submitting ? (
-            <>
-              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              {form.whitelist.type === 'none' ? 'Submitting...' : 'Encrypting & Submitting...'}
-            </>
-          ) : (
-            <>
-              <Send className="w-4 h-4 mr-2" />
-              Submit Response
-            </>
-          )}
-        </button>
-      </div>
-    </form>
+          </button>
+        </div>
+      </form>
+
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Submission</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to submit your response? Your answers cannot be modified after you submit.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>No</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSubmit}>Yes</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 
