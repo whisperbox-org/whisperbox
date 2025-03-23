@@ -1,16 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wallet, ChevronDown, Check, Copy, ExternalLink, LogOut, NetworkIcon } from 'lucide-react';
+import { Wallet, ChevronDown, Check, Copy, ExternalLink, LogOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  connectWallet, 
-  disconnectWallet, 
-  getConnectedWallet,
-  getBalance,
-  getNetwork, 
-  getENS
-} from '@/lib/wallet';
-import { useWakuContext } from '@/hooks/useWaku';
+import { walletService } from '@/lib/wallet';
+
 
 const WalletConnect: React.FC = () => {
   const [isConnected, setIsConnected] = useState(false);
@@ -23,12 +16,12 @@ const WalletConnect: React.FC = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const storedWallet = getConnectedWallet();
+    const storedWallet = walletService.getConnectedWallet();
     if (storedWallet) {
       setIsConnected(true);
       setWalletAddress(storedWallet);
       fetchWalletInfo(storedWallet);
-      getENS(storedWallet).then((ensName) => {
+      walletService.getENS(storedWallet).then((ensName) => {
         setENSName(ensName);
       });
     }
@@ -47,7 +40,7 @@ const WalletConnect: React.FC = () => {
   }, []);
 
   const handleWalletChanged = () => {
-    const address = getConnectedWallet();
+    const address = walletService.getConnectedWallet();
     if (address) {
       setWalletAddress(address);
       fetchWalletInfo(address);
@@ -73,11 +66,11 @@ const WalletConnect: React.FC = () => {
   const handleNetworkChanged = async () => {
     if (isConnected) {
       try {
-        const network = await getNetwork();
+        const network = await walletService.getNetwork();
         setNetworkName(network.name === 'homestead' ? 'Ethereum' : network.name);
         // Refresh balance as it might change with network
         if (walletAddress) {
-          const balance = await getBalance(walletAddress);
+          const balance = await walletService.getBalance(walletAddress);
           setWalletBalance(balance);
         }
         toast({
@@ -93,11 +86,11 @@ const WalletConnect: React.FC = () => {
   const fetchWalletInfo = async (address: string) => {
     try {
       // Get wallet balance
-      const balance = await getBalance(address);
+      const balance = await walletService.getBalance(address);
       setWalletBalance(balance);
       
       // Get network info
-      const network = await getNetwork();
+      const network = await walletService.getNetwork();
       setNetworkName(network.name === 'homestead' ? 'Ethereum' : network.name);
     } catch (error) {
       console.error('Error fetching wallet info:', error);
@@ -108,7 +101,7 @@ const WalletConnect: React.FC = () => {
     try {
       setConnectingStatus('connecting');
       
-      const address = await connectWallet();
+      const address = await walletService.connectWallet();
       setWalletAddress(address);
       setIsConnected(true);
       setConnectingStatus('success');
@@ -139,7 +132,7 @@ const WalletConnect: React.FC = () => {
 
   const handleDisconnect = async () => {
     try {
-      await disconnectWallet();
+      await walletService.disconnectWallet();
       setIsConnected(false);
       setWalletAddress('');
       setWalletBalance('');
