@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Shield, Clock, User, ClipboardList, Eye, EyeOff, Copy, Check, Globe, LayoutGrid, Table } from 'lucide-react';
+import { ArrowLeft, Shield, Clock, User, ClipboardList, Eye, EyeOff, Copy, Check, Globe, LayoutGrid, Table, FileText } from 'lucide-react';
 import Layout from '@/components/Layout';
 import FormResponse from '@/components/FormResponse';
 import NFTGate from '@/components/NFTGate';
@@ -434,6 +434,64 @@ const View: React.FC = () => {
                         </div>
                       </div>
                     )}
+                  </div>
+                )}
+
+                {!showResponses && form.responses.length === 0 && (
+                  <div className="mt-2 space-y-4">
+                    <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 mb-4">
+                      <div className="flex items-center">
+                        <FileText className="w-5 h-5 text-primary mr-2" />
+                        <p className="text-sm">
+                          <span className="font-medium">Form Preview</span>. 
+                          Here are the questions in your form. You'll see responses here once users submit them.
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      {form.questions.map((question, index) => (
+                        <div 
+                          key={question.id} 
+                          className="p-5 rounded-xl border border-border bg-background shadow-sm"
+                        >
+                          <div className="flex items-start mb-3">
+                            <span className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary font-medium mr-3">
+                              {index + 1}
+                            </span>
+                            <div>
+                              <h3 className="font-medium text-foreground">
+                                {question.text}
+                                {question.required && <span className="text-red-500 ml-1">*</span>}
+                              </h3>
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {question.type === 'text' && 'Short Text Answer'}
+                                {question.type === 'textarea' && 'Paragraph Answer'}
+                                {question.type === 'radioButtons' && 'Multiple Choice (Single Selection)'}
+                                {question.type === 'checkbox' && 'Checkboxes (Multiple Selection)'}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {(question.type === 'radioButtons' || question.type === 'checkbox') && question.options && (
+                            <div className="pl-10 mt-3 space-y-2">
+                              {question.options.map((option, optionIndex) => (
+                                <div key={optionIndex} className="flex items-center">
+                                  <div className="w-5 mr-2 flex justify-center">
+                                    {question.type === 'radioButtons' ? (
+                                      <span className="w-3.5 h-3.5 rounded-full border border-muted-foreground/40 inline-block" />
+                                    ) : (
+                                      <span className="w-3.5 h-3.5 rounded-sm border border-muted-foreground/40 inline-block" />
+                                    )}
+                                  </div>
+                                  <span className="text-sm text-foreground/80">{option}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
