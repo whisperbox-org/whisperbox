@@ -118,7 +118,7 @@ export class WakuClient extends EventEmitter {
     }
 
 
-    private handleNewForm(payload: FormType): void {
+    private async handleNewForm(payload: FormType): Promise<void> {
         const form = getFormById(payload.id)
 
         if(!form) {
@@ -135,7 +135,7 @@ export class WakuClient extends EventEmitter {
                 }
             }
 
-            if (!canAccessForm(payload, this.address!)) {
+            if (!await canAccessForm(payload, this.address!)) {
                 throw new Error("ignoring form I cannot access")
             }
 
