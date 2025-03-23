@@ -4,6 +4,7 @@
 import { FormType, FormResponse, FormCreationParams, FormSubmissionParams, StoredForm, StoredFormType } from '@/types/form';
 import { checkNFTOwnership, formatMessageToSign, getConnectedWallet, getENS, recoverAddress, formatFormCreationMessage } from './wallet';
 import { FORM_CONFIG } from '@/config/form';
+import { STORAGE_KEYS } from '@/config/storage';
 import { sha256 } from 'ethers';
 import { utf8ToBytes} from "@waku/sdk"
 import { generatePrivateKey, getPublicKey } from "@waku/message-encryption";
@@ -246,7 +247,7 @@ export const hasResponded = (formId: string, userAddress: string | null): boolea
   return false;
 }; 
 
-const storedFormsKey = "whisperbox_forms"
+const storedFormsKey = STORAGE_KEYS.STORED_FORMS
 
 export const storeForm = (formId: string, privateKey: string, type: StoredFormType): void =>  {
     const formKeys:StoredForm[] = JSON.parse(localStorage.getItem(storedFormsKey) || "[]")
@@ -290,7 +291,7 @@ export const getStoredForms = (): StoredForm[] => {
     return JSON.parse(localStorage.getItem(storedFormsKey) || "[]")
 }
 
-const responseKey = "whisperbox_response"
+const responseKey = STORAGE_KEYS.STORED_RESPONSES
 export const persistResponse = (response: FormSubmissionParams): void =>  {
   const responses:FormSubmissionParams[] = JSON.parse(localStorage.getItem(responseKey) || "[]")
 

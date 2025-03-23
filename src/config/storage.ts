@@ -5,6 +5,6 @@
 
 // Application storage keys
 export const STORAGE_KEYS = {
-  WALLET: 'secureform-wallet',
-  THEME: 'secureform-theme',
+  STORED_FORMS: 'whisperbox_forms',
+  STORED_RESPONSES: 'whisperbox_response'
 }; 

@@ -1,59 +1,22 @@
-import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
     createLightNode,
-    createDecoder,
     LightNode,
-    EConnectionStateEvents,
   } from "@waku/sdk";
 import {
     HealthStatus,
     HealthStatusChangeEvents,
-    IWaku,
     Protocols
 } from "@waku/interfaces"
 import { WakuClient } from "@/lib/waku";
 import { getConnectedWallet } from "@/lib/wallet";
-
-export type WakuInfo = {
-    client: WakuClient | undefined
-    status: string;
-    connected: boolean;
-    health: HealthStatus
-    stop: () => void;
-}
-
-export type WakuContextData = {
-    providerInfo: WakuInfo;
-} | null;
-
-export const WakuContext = React.createContext<WakuContextData>(null);
-
-export const useWakuContext = () => {
-    const wakuContext = useContext(WakuContext);
-
-    if (!wakuContext) {
-        throw new Error("WakuContext at a wrong level")
-    }
-    const { providerInfo } = wakuContext;
-    return useMemo<WakuInfo>(() => {
-        return {...providerInfo}
-    }, [wakuContext])
-}
-
-export const useWakuDecoder = (contentTopic: string) => {
-    return useMemo(() => {
-        return createDecoder(contentTopic)
-    }, [contentTopic])
-}
+import { BOOTSTRAP_NODES, NETWORK_CONFIG } from "@/config/waku";
+import { WakuContext } from "@/contexts/WakuContext";
 
 interface Props {
     updateStatus: (msg: string, typ: string, delay?: number) => void
     children: React.ReactNode
 }
-
-export const BOOTSTRAP_NODES = [
-    "/dns4/waku-test.bloxy.one/tcp/8095/wss/p2p/16Uiu2HAmSZbDB7CusdRhgkD81VssRjQV5ZH13FbzCGcdnbbh6VwZ",
-]
 
 export const WakuContextProvider = ({ children, updateStatus }: Props) => {
     const [status, setStatus] = useState<string>("disconnected")
@@ -73,7 +36,7 @@ export const WakuContextProvider = ({ children, updateStatus }: Props) => {
             setStatus("starting")
             updateStatus("Starting Waku node", "info", 2000)
             await createLightNode({
-                networkConfig: {clusterId: 42, shards: [0]},
+                networkConfig: NETWORK_CONFIG,
                 defaultBootstrap: false,
                 bootstrapPeers: BOOTSTRAP_NODES,
                 numPeersToUse: 1,
@@ -108,13 +71,13 @@ export const WakuContextProvider = ({ children, updateStatus }: Props) => {
         })()
 
 
-     }, [])
+     }, [address, connected, connecting, node, updateStatus])
 
-    const stop = () => {
+    const stop = useCallback(() => {
         node?.stop()
         setConnected(false)
         setStatus("stopped")
-    }
+    }, [node]);
     
 
 
