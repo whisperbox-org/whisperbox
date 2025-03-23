@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { PlusCircle, FileQuestion, Loader, Lock, ClipboardCheck, Inbox, EyeOff, PenLine } from 'lucide-react';
+import { PlusCircle, FileQuestion, Loader, Lock, ClipboardCheck, Inbox, EyeOff, PenLine, Earth } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import FormCard from '@/components/FormCard';
@@ -10,9 +10,10 @@ import AnimatedTransition from '@/components/AnimatedTransition';
 import { getAllForms, getFormsByCreator, getStoredForms} from '@/lib/formStore';
 import { useWakuContext } from '@/hooks/useWakuHooks';
 import { ClientEvents } from '@/lib/waku';
+import { getAllPublicForms } from '@/lib/publicFormFeed';
 
 // Define tab types for better type safety
-type TabType = 'created' | 'accessible' | 'participated' | 'viewed';
+type TabType = 'created' | 'accessible' | 'participated' | 'viewed' | 'publicFeed';
 
 const Forms: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('created');
@@ -20,6 +21,8 @@ const Forms: React.FC = () => {
   const [viewedForms, setViewedForms] = useState<FormType[]>([]);
   const [participatedForms, setParticipatedForms] = useState<FormType[]>([])
   const [accessibleForms, setAccesibleForms] = useState<FormType[]>([])
+  const [publicForms, setPublicForms] = useState<FormType[]>([]);
+
 
   const [loading, setLoading] = useState(true);
   const [walletConnected, setWalletConnected] = useState(false);
@@ -69,6 +72,23 @@ const Forms: React.FC = () => {
       window.removeEventListener('wallet_disconnected', loadForms);
     };
   }, [connected, client]);
+
+  useEffect(() => {
+    if (!connected || !client) {
+      setPublicForms([])
+      return
+    }
+
+    const loadPublicForms = () => {
+      const publicForms = getAllPublicForms()
+
+      setPublicForms([...publicForms.sort((a, b) => b.createdAt - a.createdAt)])
+    }
+
+    loadPublicForms()
+    if (client)
+      client.on(ClientEvents.NEW_PUBLIC_FORM, loadPublicForms)
+  }, [client, connected])
 
   if (loading) {
     return (
@@ -124,6 +144,12 @@ const Forms: React.FC = () => {
       label: 'Viewed',
       icon: <EyeOff className="w-4 h-4 mr-2" />,
       count: viewedForms.length 
+    },
+    { 
+      id: 'publicFeed', 
+      label: 'Public Feed',
+      icon: <Earth className="w-4 h-4 mr-2" />,
+      count: publicForms.length 
     }
   ];
 
@@ -220,6 +246,26 @@ const Forms: React.FC = () => {
             )}
           </>
         );
+      case 'publicFeed':
+        return (
+          <>
+            {publicForms.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {publicForms.map((form, index) => (
+                <FormCard key={form.id} form={form} delay={index} />
+              ))}
+            </div>
+          ): (
+            <div className="glassmorphism rounded-xl p-8 text-center max-w-2xl mx-auto mt-8">
+              <FileQuestion className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold mb-2">No public forms yet</h3>
+              <p className="text-muted-foreground">
+                There are no public forms available
+              </p>
+            </div>
+          )}
+          </>
+        )
       default:
         return null;
     }
@@ -236,6 +282,8 @@ const Forms: React.FC = () => {
         return "Forms you've already submitted responses to";
       case 'viewed':
         return "Forms you've viewed but haven't submitted responses to";
+      case 'publicFeed':
+        return "Public forms where anyone can participate"
       default:
         return "";
     }

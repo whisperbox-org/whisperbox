@@ -6,6 +6,7 @@ import { FormSubmissionParams, FormType, ResponseConfirmation } from "@/types";
 import { EncryptedFormSubmissionParams } from "@/types/waku";
 import { decryptAsymmetric, encryptAsymmetric } from "@waku/message-encryption/ecies";
 import { CONTENT_TOPIC } from "@/config/waku";
+import { addPublicForm } from "./publicFormFeed";
 
 
 
@@ -19,6 +20,7 @@ export enum ClientEvents {
     STATE_UPDATE = "state_update",
     NEW_RESPONSE = "new_response",
     NEW_FORM = "new_form",
+    NEW_PUBLIC_FORM = "new_public_form"
 }
 
 export enum MessageTypes {
@@ -36,7 +38,6 @@ export class WakuClient extends EventEmitter {
     dispatcher:Dispatcher | null = null
     address:string | undefined = undefined
     currentFormId: string | undefined = undefined
-
 
     constructor(node:IWaku | undefined) {
         super();
@@ -119,6 +120,12 @@ export class WakuClient extends EventEmitter {
 
 
     private async handleNewForm(payload: FormType): Promise<void> {
+        if (payload.whitelist.type == "none") {
+            if(addPublicForm(payload)) {
+                this.emit(ClientEvents.NEW_PUBLIC_FORM, {formId: payload.id})
+            }
+        }
+        
         const form = getFormById(payload.id)
 
         if(!form) {

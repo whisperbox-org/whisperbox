@@ -311,6 +311,10 @@ export class WalletService {
     return this.checkNFTOwnership(address, nftContract);
   }
 
+  public shortAddress = (address: string): string => {
+    return address.slice(0, 6)+"..."+address.slice(address.length-4)
+  }
+
   /**
    * Format a message to sign for form submission
    */
