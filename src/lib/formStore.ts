@@ -1,6 +1,3 @@
-// This is a temporary in-memory store for demonstration purposes
-// In a real implementation, this would be stored encrypted and distributed
-
 import { FormType, FormResponse, FormCreationParams, FormSubmissionParams, StoredForm, StoredFormType } from '@/types/form';
 import { walletService } from './wallet';
 import { FORM_CONFIG } from '@/config/form';
@@ -365,12 +362,10 @@ const normalizeQuestionType = (form: FormType): FormType => {
 };
 
 // Add normalization to existing functions that retrieve forms
-export const getForm = async (formId: string): Promise<FormType | null> => {
+export const getForm = (formId: string): FormType | null => {
   try {
-    // ... existing code to retrieve the form ...
-    
     // Apply normalization before returning
-    const form = await getFormById(formId);
+    const form = getFormById(formId);
     return form ? normalizeQuestionType(form) : null;
   } catch (error) {
     console.error("Error retrieving form:", error);
