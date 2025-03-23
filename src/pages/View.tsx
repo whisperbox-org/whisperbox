@@ -264,7 +264,7 @@ const View: React.FC = () => {
                   <h2 className="text-xl font-semibold">Creator Dashboard</h2>
                   <div className="flex items-center gap-2">
                     {showResponses && form.responses.length > 0 && (
-                      <div className="flex border border-border rounded-lg overflow-hidden">
+                      <div className="flex border border-border rounded-lg overflow-hidden shadow-sm">
                         <button
                           onClick={() => setViewType('card')}
                           className={`flex items-center px-3 py-1.5 text-sm font-medium transition-colors ${
@@ -274,7 +274,8 @@ const View: React.FC = () => {
                           }`}
                           aria-label="Card view"
                         >
-                          <LayoutGrid className="w-4 h-4" />
+                          <LayoutGrid className="w-4 h-4 mr-1" />
+                          <span className="hidden sm:inline">Cards</span>
                         </button>
                         <button
                           onClick={() => setViewType('table')}
@@ -285,23 +286,26 @@ const View: React.FC = () => {
                           }`}
                           aria-label="Table view"
                         >
-                          <Table className="w-4 h-4" />
+                          <Table className="w-4 h-4 mr-1" />
+                          <span className="hidden sm:inline">Table</span>
                         </button>
                       </div>
                     )}
                     <button
                       onClick={() => setShowResponses(!showResponses)}
-                      className="flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                      className="flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
                     >
                       {showResponses ? (
                         <>
                           <EyeOff className="w-4 h-4 mr-1.5" />
-                          Hide Responses
+                          <span className="hidden xs:inline">Hide Responses</span>
+                          <span className="inline xs:hidden">Hide</span>
                         </>
                       ) : (
                         <>
                           <Eye className="w-4 h-4 mr-1.5" />
-                          View Responses ({form.responses.length})
+                          <span className="hidden xs:inline">View Responses</span>
+                          <span className="inline xs:hidden">View</span> ({form.responses.length})
                         </>
                       )}
                     </button>
@@ -324,7 +328,7 @@ const View: React.FC = () => {
                 {showResponses && (
                   <div className="mt-2 space-y-4">
                     {form.responses.length === 0 ? (
-                      <div className="text-center p-8 border border-border rounded-lg">
+                      <div className="text-center p-8 border border-border rounded-lg bg-background/50">
                         <ClipboardList className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
                         <h3 className="text-lg font-medium mb-1">No responses yet</h3>
                         <p className="text-muted-foreground text-sm">
@@ -332,11 +336,11 @@ const View: React.FC = () => {
                         </p>
                       </div>
                     ) : viewType === 'card' ? (
-                      <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {form.responses.map((response, index) => (
                           <div 
                             key={response.id} 
-                            className="p-4 rounded-lg border border-border hover:shadow-sm transition-shadow"
+                            className="p-4 rounded-lg border border-border hover:border-border/80 hover:shadow-md transition-all bg-background"
                           >
                             <div className="flex justify-between items-center mb-3">
                               <div className="flex items-center">
@@ -348,8 +352,8 @@ const View: React.FC = () => {
                                   <div className="text-xs text-muted-foreground">
                                     Submitted on {formatDate(response.submittedAt)}
                                   </div>
-                                  <div className="text-xs text-muted-foreground">
-                                    Respondent: {response.respondentENS || response.respondent}
+                                  <div className="text-xs text-muted-foreground truncate max-w-[200px]">
+                                    Respondent: {response.respondentENS || (response.respondent.substring(0, 6) + '...' + response.respondent.substring(response.respondent.length - 4))}
                                   </div>
                                 </div>
                               </div>
@@ -360,16 +364,16 @@ const View: React.FC = () => {
                                 const question = form.questions.find(q => q.id === answer.questionId);
                                 return (
                                   <div key={answer.questionId} className="text-sm">
-                                    <div className="font-medium mb-1">{question?.text}</div>
+                                    <div className="font-medium mb-1 text-foreground/90">{question?.text}</div>
                                     <div className="px-3 py-2 bg-secondary/50 rounded-md">
                                       {Array.isArray(answer.value) ? (
                                         <ul className="list-disc list-inside">
                                           {answer.value.map((item, i) => (
-                                            <li key={i}>{item}</li>
+                                            <li key={i} className="text-foreground/80">{item}</li>
                                           ))}
                                         </ul>
                                       ) : (
-                                        answer.value
+                                        <span className="text-foreground/80">{answer.value}</span>
                                       )}
                                     </div>
                                   </div>
@@ -380,16 +384,16 @@ const View: React.FC = () => {
                         ))}
                       </div>
                     ) : (
-                      <div className="border border-border rounded-lg overflow-hidden">
+                      <div className="border border-border rounded-lg overflow-hidden shadow-sm bg-background">
                         <div className="overflow-x-auto">
                           <table className="w-full">
-                            <thead className="bg-secondary/50">
+                            <thead className="bg-secondary/70">
                               <tr>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">#</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Respondent</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Date</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider">#</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider">Respondent</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider">Date</th>
                                 {form.questions.map(question => (
-                                  <th key={question.id} className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                  <th key={question.id} className="px-4 py-3 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider">
                                     {question.text}
                                   </th>
                                 ))}
@@ -397,7 +401,7 @@ const View: React.FC = () => {
                             </thead>
                             <tbody className="divide-y divide-border">
                               {form.responses.map((response, index) => (
-                                <tr key={response.id}>
+                                <tr key={response.id} className="hover:bg-secondary/20 transition-colors">
                                   <td className="px-4 py-3 whitespace-nowrap text-sm">{index + 1}</td>
                                   <td className="px-4 py-3 whitespace-nowrap text-sm">
                                     {response.respondentENS || response.respondent.substring(0, 6) + '...' + response.respondent.substring(response.respondent.length - 4)}
@@ -413,7 +417,7 @@ const View: React.FC = () => {
                                               {answer.value.join(', ')}
                                             </div>
                                           ) : (
-                                            <div className="max-w-xs">
+                                            <div className="max-w-xs truncate">
                                               {answer.value}
                                             </div>
                                           )

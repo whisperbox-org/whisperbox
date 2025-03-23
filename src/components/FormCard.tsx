@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CalendarClock, ChevronRight, FileText, Users } from 'lucide-react';
+import { CalendarClock, ChevronRight, FileText, Users, Clock, Shield } from 'lucide-react';
 import { FormType } from '@/types/form';
 
 interface FormCardProps {
@@ -31,8 +31,10 @@ const FormCard: React.FC<FormCardProps> = ({ form, delay = 0 }) => {
       return 'Today';
     } else if (diffDays === 1) {
       return 'Yesterday';
-    } else {
+    } else if (diffDays < 30) {
       return `${diffDays} days ago`;
+    } else {
+      return formatDate(ts);
     }
   };
   
@@ -47,51 +49,52 @@ const FormCard: React.FC<FormCardProps> = ({ form, delay = 0 }) => {
       }}
       whileHover={{ 
         y: -5,
-        boxShadow: '0 10px 30px -10px rgba(0,0,0,0.1)' 
+        boxShadow: '0 10px 30px -15px rgba(0,0,0,0.1)' 
       }}
-      className="glassmorphism rounded-xl overflow-hidden"
+      className="bg-background border border-border hover:border-primary/20 rounded-xl overflow-hidden shadow-sm hover:shadow transition-all"
     >
-      <Link to={`/view/${form.id}`} className="block">
-        <div className="p-6">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <div className="flex space-x-2">
-                <span className="inline-block px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">
-                  {form.questions.length} Questions
-                </span>
-                <span className="inline-block px-2 py-1 text-xs font-medium bg-secondary text-foreground/80 rounded-full flex items-center">
-                  <CalendarClock className="w-3 h-3 mr-1" />
-                  {calculateDaysAgo(form.createdAt)}
-                </span>
-              </div>
-              <h3 className="text-xl font-semibold mt-3">{form.title}</h3>
-              <p className="text-muted-foreground mt-1 line-clamp-2">
-                {form.description}
-              </p>
+      <Link to={`/view/${form.id}`} className="block h-full flex flex-col">
+        <div className="p-5 flex-1 flex flex-col">
+          {/* Card header */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center">
+              <Clock className="w-3.5 h-3.5 text-muted-foreground mr-1.5" />
+              <span className="text-xs text-muted-foreground">{calculateDaysAgo(form.createdAt)}</span>
             </div>
+            {form.whitelist.type !== 'none' && (
+              <div className="flex items-center text-xs">
+                <Shield className="w-3.5 h-3.5 text-green-500 mr-1" />
+                <span className="text-green-600">Encrypted</span>
+              </div>
+            )}
           </div>
           
-          <div className="border-t border-border pt-4 mt-4 flex justify-between items-center">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center">
-                <FileText className="w-4 h-4 text-muted-foreground mr-1.5" />
-                <span className="text-sm text-muted-foreground">Created on {formatDate(form.createdAt)}</span>
-              </div>
-              
-              <div className="flex items-center">
-                <Users className="w-4 h-4 text-muted-foreground mr-1.5" />
-                <span className="text-sm text-muted-foreground">
-                  {form.responses.length} {form.responses.length === 1 ? 'Response' : 'Responses'}
-                </span>
-              </div>
-            </div>
+          {/* Card title */}
+          <h3 className="text-lg font-semibold line-clamp-1">{form.title}</h3>
+          
+          {/* Card description */}
+          <p className="text-muted-foreground text-sm mt-1.5 mb-4 line-clamp-2 flex-grow">
+            {form.description}
+          </p>
+          
+          {/* Stats row */}
+          <div className="flex flex-wrap gap-2 mt-auto mb-3">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+              {form.questions.length} Questions
+            </span>
             
-            <motion.div
-              whileHover={{ x: 5 }}
-              className="rounded-full w-8 h-8 flex items-center justify-center bg-primary/10"
-            >
-              <ChevronRight className="w-5 h-5 text-primary" />
-            </motion.div>
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-foreground/70">
+              <Users className="w-3 h-3 mr-1" />
+              {form.responses.length} {form.responses.length === 1 ? 'Response' : 'Responses'}
+            </span>
+          </div>
+          
+          {/* Card footer with action indicator */}
+          <div className="flex justify-end mt-2">
+            <span className="text-xs font-medium text-primary flex items-center">
+              View Form
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </span>
           </div>
         </div>
       </Link>

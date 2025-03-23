@@ -193,7 +193,7 @@ const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       <div className="bg-secondary/30 rounded-lg p-4 flex items-start">
-        <AlertTriangle className="w-5 h-5 text-amber-500 mr-3 mt-0.5" />
+        <AlertTriangle className="w-5 h-5 text-amber-500 mr-3 mt-0.5 flex-shrink-0" />
         <div>
           <p className="text-sm">
             {form.whitelist.type === 'none' 
@@ -211,7 +211,7 @@ const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="p-5 rounded-xl border border-border bg-background"
+            className="p-5 rounded-xl border border-border bg-background shadow-sm hover:shadow transition-shadow"
           >
             <div className="mb-3 flex items-start">
               <div className="flex-1">
@@ -228,7 +228,7 @@ const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
                 value={(answers[question.id] as string) || ''}
                 onChange={(e) => handleInputChange(question.id, e.target.value)}
                 className={`w-full px-4 py-2 rounded-lg border bg-background form-input-focus
-                  ${validationErrors[question.id] ? 'border-red-500' : 'border-border'}`}
+                  ${validationErrors[question.id] ? 'border-red-500 ring-1 ring-red-500/20' : 'border-border'}`}
                 placeholder="Your answer"
               />
             )}
@@ -237,49 +237,56 @@ const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
               <textarea
                 value={(answers[question.id] as string) || ''}
                 onChange={(e) => handleInputChange(question.id, e.target.value)}
-                className={`w-full px-4 py-2 rounded-lg border bg-background form-input-focus min-h-[100px]
-                  ${validationErrors[question.id] ? 'border-red-500' : 'border-border'}`}
+                className={`w-full px-4 py-2 rounded-lg border bg-background form-input-focus min-h-[100px] resize-y
+                  ${validationErrors[question.id] ? 'border-red-500 ring-1 ring-red-500/20' : 'border-border'}`}
                 placeholder="Your answer"
               />
             )}
             
             {question.type === 'multipleChoice' && (
-              <div className="space-y-2 ml-2">
+              <div className="space-y-3 ml-2 mt-2">
                 {question.options?.map((option, optionIndex) => (
-                  <label key={`${question.id}-option-${optionIndex}`} className="flex items-center">
-                    <input
-                      type="radio"
-                      name={question.id}
-                      value={option}
-                      checked={(answers[question.id] as string) === option}
-                      onChange={() => handleInputChange(question.id, option)}
-                      className="mr-3"
-                    />
-                    <span>{option}</span>
+                  <label key={`${question.id}-option-${optionIndex}`} className="flex items-center p-2 hover:bg-secondary/30 rounded-md transition-colors cursor-pointer">
+                    <div className="relative flex items-center">
+                      <input
+                        type="radio"
+                        name={question.id}
+                        value={option}
+                        checked={(answers[question.id] as string) === option}
+                        onChange={() => handleInputChange(question.id, option)}
+                        className="w-4 h-4 border-2 border-border cursor-pointer"
+                      />
+                      <span className="ml-3">{option}</span>
+                    </div>
                   </label>
                 ))}
               </div>
             )}
             
             {question.type === 'checkbox' && (
-              <div className="space-y-2 ml-2">
+              <div className="space-y-3 ml-2 mt-2">
                 {question.options?.map((option, optionIndex) => (
-                  <label key={`${question.id}-option-${optionIndex}`} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      value={option}
-                      checked={Array.isArray(answers[question.id]) && (answers[question.id] as string[]).includes(option)}
-                      onChange={(e) => handleCheckboxChange(question.id, option, e.target.checked)}
-                      className="mr-3 rounded"
-                    />
-                    <span>{option}</span>
+                  <label key={`${question.id}-option-${optionIndex}`} className="flex items-center p-2 hover:bg-secondary/30 rounded-md transition-colors cursor-pointer">
+                    <div className="relative flex items-center">
+                      <input
+                        type="checkbox"
+                        value={option}
+                        checked={Array.isArray(answers[question.id]) && (answers[question.id] as string[]).includes(option)}
+                        onChange={(e) => handleCheckboxChange(question.id, option, e.target.checked)}
+                        className="w-4 h-4 border-2 border-border rounded cursor-pointer"
+                      />
+                      <span className="ml-3">{option}</span>
+                    </div>
                   </label>
                 ))}
               </div>
             )}
             
             {validationErrors[question.id] && (
-              <p className="text-red-500 text-sm mt-1">{validationErrors[question.id]}</p>
+              <p className="text-red-500 text-sm mt-2 flex items-center">
+                <AlertTriangle className="w-4 h-4 mr-1.5" />
+                {validationErrors[question.id]}
+              </p>
             )}
           </motion.div>
         ))}
@@ -289,7 +296,7 @@ const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
         <button
           type="submit"
           disabled={submitting}
-          className={`px-6 py-3 rounded-lg bg-primary text-primary-foreground font-medium flex items-center 
+          className={`px-6 py-3 rounded-lg bg-primary text-primary-foreground font-medium flex items-center shadow-sm
             ${submitting ? 'opacity-80 cursor-wait' : 'button-hover'}`}
         >
           {submitting ? (
