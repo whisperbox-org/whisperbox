@@ -105,6 +105,10 @@ const WalletConnect: React.FC = () => {
       
       // Get network info
       const network = await walletService.getNetwork();
+      if (network.chainId.toString() != "11155111") {
+        await walletService.switchNetwork()
+        window.location.reload()
+      }
       setNetworkName(network.name === 'homestead' ? 'Ethereum' : network.name);
       setChainId(network.chainId.toString());
     } catch (error) {

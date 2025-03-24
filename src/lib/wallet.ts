@@ -1,6 +1,7 @@
 import { ethers } from 'ethers';
 import { ENS_CACHE, ENS_CACHE_TTL, MAINNET_RPC_URLS, WALLET_CONFIG, WALLET_EVENT_NAMES } from '@/config/wallet';
 import { STORAGE_KEYS } from '@/config/storage';
+import { EthereumProvider } from '@/types';
 
 /**
  * WalletService - Class-based implementation of wallet functionality
@@ -55,7 +56,19 @@ export class WalletService {
         throw new Error('No Ethereum provider found. Please install MetaMask or another wallet.');
       }
     }
+
     return this._provider;
+  }
+
+  public async switchNetwork() {
+    try {
+      await window!.ethereum!.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: '0xAA36A7' }],    // chainId must be in HEX with 0x in front
+        });
+    } catch (e) {
+      console.error("Failed to prompt Wallet network change", e)
+    } 
   }
 
   /**

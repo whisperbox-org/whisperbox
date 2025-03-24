@@ -395,7 +395,7 @@ const FormCreator: React.FC = () => {
                           >
                             <option value={FORM_CONFIG.QUESTION_TYPES.TEXT}>Short Text</option>
                             <option value={FORM_CONFIG.QUESTION_TYPES.TEXTAREA}>Paragraph</option>
-                            <option value={FORM_CONFIG.QUESTION_TYPES.RADIO_BUTTONS}>Multiple Choice</option>
+                            <option value={FORM_CONFIG.QUESTION_TYPES.RADIO_BUTTONS}>Single Choice</option>
                             <option value={FORM_CONFIG.QUESTION_TYPES.CHECKBOX}>Checkboxes</option>
                           </select>
                         </div>
