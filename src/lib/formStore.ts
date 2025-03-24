@@ -390,3 +390,28 @@ export const validateForm = (form:FormType):boolean => {
 
   return true
 }
+
+export const formToCSV = (form: FormType) => {
+  const csvData: string[][] = [form.questions.map(q => q.text)]
+
+  for (const response of form.responses) {
+    const rData = response.answers.map((a):string | undefined => {
+      const question = form.questions.find(q => q.id == a.questionId)
+      if (!question) return undefined
+      
+      switch (question.type) {
+        case 'text':
+          return a.value as string
+        case 'textarea':
+          return a.value as string
+        case 'checkbox':
+          return (a.value as number[]).map(a => question.options![a]).join(', ')
+        case 'radioButtons':
+          return question.options![a.value as number]
+      }
+    })
+    csvData.push(rData.filter(d => d !== undefined))
+  }
+
+  return csvData
+}
