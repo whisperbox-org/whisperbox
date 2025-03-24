@@ -26,7 +26,7 @@ interface FormResponseProps {
 const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
   const { toast } = useToast();
   const { client, connected } = useWakuContext()
-  const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
+  const [answers, setAnswers] = useState<Record<string, string | number | number[]>>({});
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -41,7 +41,7 @@ const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
     }
   },[form])
 
-  const handleInputChange = (questionId: string, value: string | string[]) => {
+  const handleInputChange = (questionId: string, value: string | number | number[]) => {
     setAnswers({
       ...answers,
       [questionId]: value,
@@ -55,14 +55,14 @@ const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
     }
   };
 
-  const handleCheckboxChange = (questionId: string, option: string, checked: boolean) => {
-    const currentValues = (answers[questionId] as string[]) || [];
+  const handleCheckboxChange = (questionId: string, optionIndex: number, checked: boolean) => {
+    const currentValues = (answers[questionId] as number[]) || [];
     
     let newValues;
     if (checked) {
-      newValues = [...currentValues, option];
+      newValues = [...currentValues, optionIndex];
     } else {
-      newValues = currentValues.filter(v => v !== option);
+      newValues = currentValues.filter(v => v !== optionIndex);
     }
     
     handleInputChange(questionId, newValues);
@@ -296,9 +296,9 @@ const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
                         <input
                           type="radio"
                           name={question.id}
-                          value={option}
-                          checked={(answers[question.id] as string) === option}
-                          onChange={() => handleInputChange(question.id, option)}
+                          value={optionIndex}
+                          checked={(answers[question.id] as number) === optionIndex}
+                          onChange={() => handleInputChange(question.id, optionIndex)}
                           className="w-4 h-4 border-2 border-border cursor-pointer"
                         />
                         <span className="ml-3">{option}</span>
@@ -315,9 +315,9 @@ const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
                       <div className="relative flex items-center">
                         <input
                           type="checkbox"
-                          value={option}
-                          checked={Array.isArray(answers[question.id]) && (answers[question.id] as string[]).includes(option)}
-                          onChange={(e) => handleCheckboxChange(question.id, option, e.target.checked)}
+                          value={optionIndex}
+                          checked={Array.isArray(answers[question.id]) && (answers[question.id] as number[]).includes(optionIndex)}
+                          onChange={(e) => handleCheckboxChange(question.id, optionIndex, e.target.checked)}
                           className="w-4 h-4 border-2 border-border rounded cursor-pointer"
                         />
                         <span className="ml-3">{option}</span>

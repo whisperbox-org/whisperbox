@@ -38,7 +38,7 @@ export interface FormResponse {
   signature: string;
   answers: {
     questionId: string;
-    value: string | string[];
+    value: string | number | number[];
   }[];
   confirmationId: string | null;
 }
