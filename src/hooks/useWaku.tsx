@@ -27,49 +27,57 @@ export const WakuContextProvider = ({ children, updateStatus }: Props) => {
     const [ client, setClient ] = useState<WakuClient | undefined>(undefined)
     const address = walletService.getConnectedWallet();
 
-
-
     useEffect(() => {
-        (async () => {
-            if (connected || connecting || node || !address) return
-            setConnecting(true)
-            setStatus("starting")
-            updateStatus("Starting Waku node", "info", 2000)
-            await createLightNode({
-                networkConfig: NETWORK_CONFIG,
-                bootstrapPeers: BOOTSTRAP_NODES,
-                
-            }).then( async (ln: LightNode) => {
-                if (node) return
-                setNode(ln)
-                setStatus("connecting")
-
+        const connectToWaku = async () => {
+            if (connected || connecting || node || !address) return;
             
+            try {
+                setConnecting(true);
+                setStatus("starting");
+                updateStatus("Starting Waku node", "info", 2000);
                 
-                try {
-                    updateStatus("Waiting for a peer", "success", 3000)
-                    await ln.waitForPeers([Protocols.LightPush, Protocols.Filter, Protocols.Store])
-                    updateStatus("Waku node successfully connected", "success", 5000)
-                    console.log(await ln.libp2p.peerStore.all())
-                    ln.health.addEventListener(HealthStatusChangeEvents.StatusChange, (hs) => {
-                            setHealth(hs.detail)
-                        })
+                const ln = await createLightNode({
+                    networkConfig: NETWORK_CONFIG,
+                    bootstrapPeers: BOOTSTRAP_NODES,
+                });
+                console.log("Light node created");
+                
+                // Return early if node is already set (race condition protection)
+                if (node) return;
+                
+                setNode(ln);
+                setStatus("connecting");
+                
+                console.log("Waiting for a peer");
+                updateStatus("Waiting for a peer", "success", 3000);
+                // await ln.waitForPeers([Protocols.LightPush, Protocols.Filter, Protocols.Store]);
+                console.log("Peer found");
+                updateStatus("Waku node successfully connected", "success", 5000);
 
-                    const c = new WakuClient(ln);
-                    setClient(c)
-                    c.setAddress(address)
-                    await c.init()
-                    setStatus("connected")
-                    setConnected(true)
-                    setConnecting(false)
-                } finally {
-                    setConnecting(false)
-                }
-            })
-        })()
-
-
-     }, [address, connected, connecting, node, updateStatus])
+                console.log("Getting all peers");
+                console.log(await ln.libp2p.peerStore.all());
+                
+                ln.health.addEventListener(HealthStatusChangeEvents.StatusChange, (hs) => {
+                    setHealth(hs.detail);
+                });
+                
+                const c = new WakuClient(ln);
+                setClient(c);
+                c.setAddress(address);
+                await c.init();
+                
+                setStatus("connected");
+                setConnected(true);
+            } catch (error) {
+                console.error("Failed to connect to Waku:", error);
+                setStatus("error");
+            } finally {
+                setConnecting(false);
+            }
+        };
+        
+        connectToWaku();
+    }, [address, connected, connecting, node, updateStatus]);
 
     const stop = useCallback(() => {
         node?.stop()
@@ -77,8 +85,6 @@ export const WakuContextProvider = ({ children, updateStatus }: Props) => {
         setStatus("stopped")
     }, [node]);
     
-
-
     const wakuInfo = useMemo(
         () => ({
             client,
