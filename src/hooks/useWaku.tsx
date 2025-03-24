@@ -37,9 +37,7 @@ export const WakuContextProvider = ({ children, updateStatus }: Props) => {
             updateStatus("Starting Waku node", "info", 2000)
             await createLightNode({
                 networkConfig: NETWORK_CONFIG,
-                defaultBootstrap: false,
                 bootstrapPeers: BOOTSTRAP_NODES,
-                numPeersToUse: 1,
                 
             }).then( async (ln: LightNode) => {
                 if (node) return
