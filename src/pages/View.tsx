@@ -377,11 +377,11 @@ const View: React.FC = () => {
                                       {Array.isArray(answer.value) ? (
                                         <ul className="list-disc list-inside">
                                           {answer.value.map((item, i) => (
-                                            <li key={i} className="text-foreground/80">{item}</li>
+                                            <li key={i} className="text-foreground/80">{question?.options && question?.options[item]}</li>
                                           ))}
                                         </ul>
                                       ) : (
-                                        <span className="text-foreground/80">{answer.value}</span>
+                                        <span className="text-foreground/80">{question?.type == 'radioButtons' && question.options? question.options[answer.value as number] : answer.value}</span>
                                       )}
                                     </div>
                                   </div>
@@ -420,13 +420,13 @@ const View: React.FC = () => {
                                     return (
                                       <td key={question.id} className="px-4 py-3 text-sm">
                                         {answer ? (
-                                          Array.isArray(answer.value) ? (
+                                          Array.isArray(answer.value) && question.options ? (
                                             <div className="max-w-xs">
-                                              {answer.value.join(', ')}
+                                              {answer.value.map(item => question.options![item]).join(', ')}
                                             </div>
                                           ) : (
                                             <div className="max-w-xs truncate">
-                                              {answer.value}
+                                              {question?.type == 'radioButtons' && question.options? question.options[answer.value as number] : answer.value}
                                             </div>
                                           )
                                         ) : (
