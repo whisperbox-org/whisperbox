@@ -75,7 +75,7 @@ const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
       if (question.required) {
         const answer = answers[question.id];
         
-        if (!answer) {
+        if (answer === undefined || answer === "" || (Array.isArray(answer) && answer.length === 0)) {
           errors[question.id] = 'This question is required';
         } else if (Array.isArray(answer) && answer.length === 0) {
           errors[question.id] = 'Please select at least one option';

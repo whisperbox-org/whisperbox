@@ -71,6 +71,7 @@ export const createForm = (form: FormCreationParams): FormType => {
 
 export const addForm = (form: FormType) => {
   if (!validateForm(form)) throw new Error(`Invalid form ${form.id}`)
+  if (getFormById(form.id)) return
   let loaded = false
   const wallet = walletService.getConnectedWallet()
   if (form.creator == wallet) {

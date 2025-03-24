@@ -1,6 +1,6 @@
 import EventEmitter from "events"
 import getDispatcher, { Dispatcher} from "waku-dispatcher"
-import { bytesToUtf8,  IWaku, LightNode, Protocols, utf8ToBytes,  } from "@waku/sdk";
+import { bytesToUtf8,  IWaku, LightNode, Protocols, SDKProtocolResult, utf8ToBytes,  } from "@waku/sdk";
 import { addConfirmation, addForm, canAccessForm, getAllForms, getFormById, getFormsByCreator, loadStoredForm, storeForm, submitResponse, toByteArray, toHexString, validateFormCreator } from "./formStore";
 import { FormSubmissionParams, FormType, ResponseConfirmation } from "@/types";
 import { EncryptedFormSubmissionParams } from "@/types/waku";
@@ -203,8 +203,9 @@ export class WakuClient extends EventEmitter {
         const formToPublish = JSON.parse(JSON.stringify(form));
         formToPublish.privateKey = ""
 
-        const result = await this.dispatcher.emit(MessageTypes.NEW_FORM, formToPublish)
-        return result != false
+        const result = await this.dispatcher.emitTo(this.dispatcher.encoder!, MessageTypes.NEW_FORM, formToPublish, undefined, undefined, true)
+        console.debug(result)
+        return (result as SDKProtocolResult).successes.length > 0
     }
 
     public async publishResponse(response: FormSubmissionParams): Promise<boolean> {
