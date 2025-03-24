@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Shield, Clock, User, ClipboardList, Eye, EyeOff, Copy, Check, Globe, LayoutGrid, Table, FileText } from 'lucide-react';
+import { ArrowLeft, Shield, Clock, User, ClipboardList, Eye, EyeOff, Copy, Check, Globe, LayoutGrid, Table, FileText, FileSpreadsheet } from 'lucide-react';
 import Layout from '@/components/Layout';
 import FormResponse from '@/components/FormResponse';
 import NFTGate from '@/components/NFTGate';
@@ -9,7 +9,8 @@ import {
   hasResponded, 
   canAccessFormById,
   updateStoredForm,
-  loadStoredForm
+  loadStoredForm,
+  formToCSV
 } from '@/lib/formStore';
 import { walletService } from '@/lib/wallet';
 import AnimatedTransition from '@/components/AnimatedTransition';
@@ -17,6 +18,8 @@ import { useToast } from '@/hooks/use-toast';
 import { FormType, StoredFormType } from '@/types';
 import { ClientEvents } from '@/lib/waku';
 import { useWakuContext } from '@/hooks/useWakuHooks';
+import { CSVDownload, CSVLink } from "react-csv";
+
 
 const View: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -297,6 +300,19 @@ const View: React.FC = () => {
                           <Table className="w-4 h-4 mr-1" />
                           <span className="hidden sm:inline">Table</span>
                         </button>
+                        <CSVLink 
+                          className={`flex items-center px-3 py-1.5 text-sm font-medium transition-colors ${
+                              'bg-background hover:bg-secondary/50'
+                          }`}
+                          data={formToCSV(form)}
+                          target="_blank" 
+                          aria-label="Download CSV"
+                          filename={`${form.title}.csv`}
+                        >                          
+                          <FileSpreadsheet className="w-4 h-4 mr-1" />
+                          <span className="hidden sm:inline">CSV</span>
+                        </CSVLink>
+
                       </div>
                     )}
                     <button
