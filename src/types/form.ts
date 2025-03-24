@@ -18,7 +18,7 @@ export interface FormType {
   publicKey: string;
   privateKey: string;
   createdAt: number;
-  expiresAt?: string; // Optional expiry timestamp
+  expiresAt?: number; // Optional expiry timestamp
   questions: FormQuestion[];
   whitelist: {
     type: 'nft' | 'addresses' | 'none';
