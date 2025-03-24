@@ -177,7 +177,7 @@ export class WakuClient extends EventEmitter {
         const form = getFormById(response.formId)
 
         if(form && form.creator == this.address) {
-            submitResponse(response)
+            await submitResponse(response)
             await this.publishConfirmation(response)
 
             this.emit(ClientEvents.NEW_RESPONSE, { form, response: response });
