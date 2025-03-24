@@ -39,7 +39,7 @@ const Forms: React.FC = () => {
         
         // Get the user's forms
         const userForms = getFormsByCreator(wallet);
-        setCreatedForms(userForms);
+        setCreatedForms(userForms.sort((a, b) => b.createdAt - a.createdAt));
       } else {
         setWalletConnected(false);
       }
@@ -50,9 +50,9 @@ const Forms: React.FC = () => {
       const accessibleFormsFilter = storedForms.filter(f => f.type == StoredFormType.ACCESSIBLE)
       const allForms = getAllForms()
 
-      setViewedForms(allForms.filter(f => viewedFormsFitler.findIndex(vf => vf.id == f.id) >= 0))
-      setParticipatedForms(allForms.filter(f => participatedFormsFilter.findIndex(vf => vf.id == f.id) >= 0))
-      setAccesibleForms(allForms.filter(f => accessibleFormsFilter.findIndex(vf => vf.id == f.id) >= 0))
+      setViewedForms(allForms.filter(f => viewedFormsFitler.findIndex(vf => vf.id == f.id) >= 0).sort((a, b) => b.createdAt - a.createdAt))
+      setParticipatedForms(allForms.filter(f => participatedFormsFilter.findIndex(vf => vf.id == f.id) >= 0).sort((a, b) => b.createdAt - a.createdAt))
+      setAccesibleForms(allForms.filter(f => accessibleFormsFilter.findIndex(vf => vf.id == f.id) >= 0).sort((a, b) => b.createdAt - a.createdAt))
 
       
       setLoading(false);
@@ -80,7 +80,10 @@ const Forms: React.FC = () => {
     }
 
     const loadPublicForms = () => {
-      const publicForms = getAllPublicForms()
+      let publicForms = getAllPublicForms()
+
+      const storedForms = getStoredForms()
+      publicForms = publicForms.filter((f) => storedForms.findIndex(sf => f.id == sf.id) < 0)
 
       setPublicForms([...publicForms.sort((a, b) => b.createdAt - a.createdAt)])
     }

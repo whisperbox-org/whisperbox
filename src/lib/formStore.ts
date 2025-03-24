@@ -70,6 +70,7 @@ export const createForm = (form: FormCreationParams): FormType => {
 };
 
 export const addForm = (form: FormType) => {
+  if (!validateForm(form)) throw new Error(`Invalid form ${form.id}`)
   let loaded = false
   const wallet = walletService.getConnectedWallet()
   if (form.creator == wallet) {
@@ -376,3 +377,16 @@ export const getForm = (formId: string): FormType | null => {
     return null;
   }
 };
+
+export const validateForm = (form:FormType):boolean => {
+  if (!form.createdAt ||
+    !form.creator ||
+    !form.id ||
+    !form.signature ||
+    !form.title ||
+    !form.publicKey ||
+    !form.confirmations
+  ) return false
+
+  return true
+}
