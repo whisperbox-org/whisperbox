@@ -1,4 +1,5 @@
 import { FormType } from "@/types";
+import { validateForm } from "./formStore";
 
 
 let publicForms: FormType[] = [];
@@ -7,6 +8,9 @@ export const addPublicForm = (form: FormType): FormType | undefined => {
     if (getPublicFormById(form.id)) {
         return undefined
     }
+
+    if (!validateForm(form)) return undefined
+
     if (publicForms.length > 100) {
         publicForms.shift()
     }

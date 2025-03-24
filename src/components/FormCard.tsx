@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CalendarClock, ChevronRight, FileText, Users, Clock, Shield } from 'lucide-react';
 import { FormType } from '@/types/form';
 import { addForm } from '@/lib/formStore';
+import { useWakuContext } from '@/hooks/useWakuHooks';
+import { ClientEvents } from '@/lib/waku';
+import {walletService} from '@/lib/wallet';
 
 interface FormCardProps {
   form: FormType;
@@ -11,6 +14,13 @@ interface FormCardProps {
 }
 
 const FormCard: React.FC<FormCardProps> = ({ form, delay = 0 }) => {
+  const {client} = useWakuContext()
+  const [creatorENS, setCreatorENS] = useState<string | null>(null)
+
+  useEffect(() => {
+    walletService.getENS(form.creator).then(ens => setCreatorENS(ens))
+  }, [form])
+
   // Format date to be more readable
   const formatDate = (ts : number) => {
     const date = new Date(ts);
@@ -54,7 +64,10 @@ const FormCard: React.FC<FormCardProps> = ({ form, delay = 0 }) => {
       }}
       className="bg-background border border-border hover:border-primary/20 rounded-xl overflow-hidden shadow-sm hover:shadow transition-all"
     >
-      <Link to={`/view/${form.id}`} className="block h-full flex flex-col">
+      <Link to={`/view/${form.id}`} onClick={() => {
+                  addForm(form)
+                  client?.emit(ClientEvents.NEW_FORM, {formId: form.id})
+            }} className="block h-full flex flex-col">
         <div className="p-5 flex-1 flex flex-col">
           {/* Card header */}
           <div className="flex items-center justify-between mb-3">
@@ -87,6 +100,11 @@ const FormCard: React.FC<FormCardProps> = ({ form, delay = 0 }) => {
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-foreground/70">
               <Users className="w-3 h-3 mr-1" />
               {form.responses.length} {form.responses.length === 1 ? 'Response' : 'Responses'}
+            </span>
+
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-foreground/70">
+              <Users className="w-3 h-3 mr-1" />
+              {creatorENS || walletService.shortAddress(form.creator)}
             </span>
           </div>
           
