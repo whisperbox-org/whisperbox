@@ -1,5 +1,4 @@
 import { useContext, useMemo } from "react";
-import { createDecoder } from "@waku/sdk";
 import { WakuContext, WakuInfo } from "@/contexts/WakuContext";
 
 export const useWakuContext = () => {
@@ -16,7 +15,9 @@ export const useWakuContext = () => {
 }
 
 export const useWakuDecoder = (contentTopic: string) => {
+    const { client } = useWakuContext();
+
     return useMemo(() => {
-        return createDecoder(contentTopic)
+        return client?.node?.createDecoder({ contentTopic })
     }, [contentTopic])
 } 

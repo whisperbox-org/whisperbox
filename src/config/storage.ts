@@ -7,5 +7,7 @@
 export const STORAGE_KEYS = {
   STORED_FORMS: 'whisperbox_forms',
   STORED_RESPONSES: 'whisperbox_response',
-  WALLET: 'whisperbox_wallet'
-}; 
+  WALLET: 'whisperbox_wallet',
+  DRAFT_FORMS: 'whisperbox_draft_forms',
+  DRAFT_RESPONSES: 'whisperbox_draft_responses'
+};

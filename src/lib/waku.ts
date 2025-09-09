@@ -34,12 +34,12 @@ export class WakuClient extends EventEmitter {
 
     state:ClientState | undefined = undefined
 
-    node:IWaku | undefined = undefined
+    node:LightNode | undefined = undefined
     dispatcher:Dispatcher | null = null
     address:string | undefined = undefined
     currentFormId: string | undefined = undefined
 
-    constructor(node:IWaku | undefined) {
+    constructor(node:LightNode | undefined) {
         super();
 
         this.node = node
@@ -56,7 +56,7 @@ export class WakuClient extends EventEmitter {
         try {
             await this.node!.waitForPeers([Protocols.Filter, Protocols.LightPush, Protocols.Store]);
             if(!this.dispatcher) {
-                const disp = await getDispatcher(this.node as LightNode, CONTENT_TOPIC, "whisperbox", false, false)
+                const disp = await getDispatcher(this.node!, CONTENT_TOPIC, "whisperbox", false, false)
                 if (!disp) {
                     throw new Error("Failed to initialize Waku Dispatcher")
                 }
@@ -75,6 +75,8 @@ export class WakuClient extends EventEmitter {
 
                 return
             }
+
+            await this.dispatcher.initContentTopic(CONTENT_TOPIC)
 
             this.dispatcher.on(MessageTypes.NEW_FORM, this.handleNewForm.bind(this))
             this.dispatcher.on(MessageTypes.FORM_RESPONSE, this.handleResponse.bind(this))
@@ -184,7 +186,7 @@ export class WakuClient extends EventEmitter {
         }
     }
 
-    private handleConfirmation(payload: ResponseConfirmation): void {
+    private async handleConfirmation(payload: ResponseConfirmation): Promise<void> {
         const form = getFormById(payload.formId)
 
         if(form) {

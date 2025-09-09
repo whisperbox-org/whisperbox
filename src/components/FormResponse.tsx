@@ -7,6 +7,7 @@ import { walletService } from '@/lib/wallet';
 import { loadResponse, submitAndPersistResponse, toHexString } from '@/lib/formStore';
 import { randomBytes } from 'ethers';
 import { useWakuContext } from '@/hooks/useWakuHooks';
+import { loadResponseDraft, saveResponseDraft } from '@/lib/draftStore';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +32,7 @@ const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'unsaved'>('saved');
 
   useEffect(() => {
     if (form) {
@@ -40,6 +42,37 @@ const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
       }
     }
   },[form])
+  
+  // Load draft response when component mounts
+  useEffect(() => {
+    if (form) {
+      const draft = loadResponseDraft(form.id);
+      if (draft) {
+        // Restore answers from draft
+        const restoredAnswers: Record<string, string | number | number[]> = {};
+        draft.answers.forEach(answer => {
+          restoredAnswers[answer.questionId] = typeof answer.value === 'boolean' ? (answer.value ? 1 : 0) : answer.value;
+        });
+        setAnswers(restoredAnswers);
+      }
+    }
+  }, [form]);
+  
+  // Save draft whenever answers change
+  useEffect(() => {
+    if (form) {
+      saveResponseDraft({
+        formId: form.id,
+        answers: Object.entries(answers).map(([questionId, value]) => ({
+          questionId,
+          value
+        })),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        autosave: true
+      });
+    }
+  }, [form, answers]);
 
   const handleInputChange = (questionId: string, value: string | number | number[]) => {
     setAnswers({
@@ -54,6 +87,20 @@ const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
       setValidationErrors(newErrors);
     }
   };
+  
+  // Update save status when answers change
+  useEffect(() => {
+    setSaveStatus('unsaved');
+  }, [answers]);
+  
+  // Update save status when draft is saved
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSaveStatus('saved');
+    }, 1500);
+    
+    return () => clearTimeout(timer);
+  }, [answers]);
 
   const handleCheckboxChange = (questionId: string, optionIndex: number, checked: boolean) => {
     const currentValues = (answers[questionId] as number[]) || [];
@@ -224,9 +271,31 @@ const FormResponse: React.FC<FormResponseProps> = ({ form, onSubmitted }) => {
     );
   }
 
+  // Save status indicator component
+  const SaveStatusIndicator = () => (
+    <div className="flex items-center mb-6">
+      {saveStatus === 'saved' ? (
+        <div className="flex items-center text-green-600">
+          <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          <span className="text-sm">Saved</span>
+        </div>
+      ) : (
+        <div className="flex items-center text-yellow-600">
+          <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+          </svg>
+          <span className="text-sm">Unsaved</span>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <>
       <form onSubmit={handleFormSubmit} className="space-y-8">
+        <SaveStatusIndicator />
         <div className="bg-secondary/30 rounded-lg p-4 flex items-start">
           <AlertTriangle className="w-5 h-5 text-amber-500 mr-3 mt-0.5 flex-shrink-0" />
           <div>
