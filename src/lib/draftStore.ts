@@ -229,19 +229,19 @@ const getStorage = (key: string) => {
 };
 
 // Save draft form
-export const saveFormDraft = (draft: FormCreationDraft): void => {
+export const saveFormDraft = (draft: FormCreationDraft): boolean => {
   try {
     // Validate draft data
     if (!validateFormDraft(draft)) {
       console.error('Invalid form draft data');
-      return;
+      return false;
     }
     
     // Check storage quota
     const quota = checkStorageQuota();
     if (!quota.available) {
       console.warn('Storage limit exceeded, cannot save draft');
-      return;
+      return false;
     }
     
     const storage = getStorage(STORAGE_KEYS.DRAFT_FORMS);
@@ -253,6 +253,7 @@ export const saveFormDraft = (draft: FormCreationDraft): void => {
       drafts = stored ? safeParseJSON(stored, []) : [];
     } catch (e) {
       console.warn('Failed to parse existing drafts, starting fresh');
+      // Continue with empty drafts array
     }
     
     const existingIndex = drafts.findIndex(d => d.id === draft.id);
@@ -266,7 +267,9 @@ export const saveFormDraft = (draft: FormCreationDraft): void => {
     storage.setItem(storageKey, JSON.stringify(drafts));
   } catch (error) {
     console.error('Failed to save form draft:', error);
+    return false;
   }
+  return true;
 };
 
 // Load draft form

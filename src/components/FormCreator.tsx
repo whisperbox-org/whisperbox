@@ -74,7 +74,7 @@ const FormCreator: React.FC = () => {
     
     const timer = setTimeout(() => {
       if (hasUnsavedChanges) {
-        saveFormDraft({
+        const success = saveFormDraft({
           id: draftId,
           title,
           description,
@@ -85,9 +85,15 @@ const FormCreator: React.FC = () => {
           updatedAt: Date.now(),
           autosave: true
         });
-        setLastSaved(new Date());
-        setHasUnsavedChanges(false);
-        setSaveStatus('saved');
+        
+        if (success) {
+          setLastSaved(new Date());
+          setHasUnsavedChanges(false);
+          setSaveStatus('saved');
+          // Refresh the drafts list after saving
+          const updatedDrafts = getAllFormDrafts();
+          setDrafts(updatedDrafts);
+        }
       }
     }, 1500); // 1.5 second debounce
 
