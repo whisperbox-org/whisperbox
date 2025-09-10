@@ -5,6 +5,7 @@ import { STORAGE_KEYS } from '@/config/storage';
 import { sha256 } from 'ethers';
 import { utf8ToBytes} from "@waku/sdk"
 import { generatePrivateKey, getPublicKey } from "@waku/message-encryption";
+import { loadResponseDraft, deleteResponseDraft } from './draftStore';
 
 
 
@@ -311,18 +312,21 @@ export const persistResponse = (response: FormSubmissionParams): void =>  {
 
   const updatedResponses = [...responses, response]
   localStorage.setItem(responseKey, JSON.stringify(updatedResponses))
+  
+  // Delete the response draft after successful persistence
+  deleteResponseDraft(response.formId);
 }
 
 export const loadResponse = (formId: string): FormSubmissionParams | undefined => {
+  // Only load from persisted responses, not from drafts
   const responses:FormSubmissionParams[] = JSON.parse(localStorage.getItem(responseKey) || "[]")
   
   const formIndex = responses.findIndex(f => f.formId == formId)
-
-  if (formIndex < 0) {
-    return
+  if (formIndex >= 0) {
+    return responses[formIndex]
   }
 
-  return responses[formIndex]
+  return undefined;
 }
 
 export function toHexString(byteArray: Uint8Array) {

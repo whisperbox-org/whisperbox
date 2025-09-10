@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
-import { Plus, Minus, Trash2, Save, HelpCircle, AlignLeft, CheckSquare, ListChecks, FileText, Globe, Shield, Users, Copy, GripVertical } from 'lucide-react';
+import { Plus, Minus, Trash2, Save, HelpCircle, AlignLeft, CheckSquare, ListChecks, FileText, Globe, Shield, Users, Copy, GripVertical, Clock, Edit, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { FormQuestion } from '@/types/form';
 import { walletService } from '@/lib/wallet';
@@ -8,6 +8,13 @@ import { useNavigate } from 'react-router-dom';
 import { createForm } from '@/lib/formStore';
 import { FORM_CONFIG } from '@/config/form';
 import { useWakuContext } from '@/hooks/useWakuHooks';
+import {
+  saveFormDraft,
+  loadFormDraft,
+  deleteFormDraft,
+  FormCreationDraft,
+  getAllFormDrafts
+} from '@/lib/draftStore';
 
 const FormCreator: React.FC = () => {
   const navigate = useNavigate();
@@ -25,7 +32,85 @@ const FormCreator: React.FC = () => {
   const [whitelistValue, setWhitelistValue] = useState(''); // Empty by default since Public Access is selected
   const [showHelp, setShowHelp] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [draftId, setDraftId] = useState<string>(`form-draft-${Date.now()}`);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isAutoSaveEnabled, setIsAutoSaveEnabled] = useState(true);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const {client,connected} = useWakuContext()
+  const [drafts, setDrafts] = useState<FormCreationDraft[]>([]);
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'unsaved'>('saved');
+
+  // Load all drafts on component mount
+  useEffect(() => {
+    try {
+      // Get all form drafts from storage
+      const allDrafts = getAllFormDrafts();
+      setDrafts(allDrafts);
+      
+      // Load draft on component mount
+      const savedDraft = loadFormDraft(draftId);
+      if (savedDraft) {
+        setTitle(savedDraft.title);
+        setDescription(savedDraft.description);
+        setQuestions(savedDraft.questions);
+        setWhitelistType(savedDraft.whitelistType);
+        setWhitelistValue(savedDraft.whitelistValue);
+        
+        // Show toast notification about loaded draft
+        toast({
+          title: "Draft loaded",
+          description: "We found a saved draft from your previous session.",
+          duration: 5000,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load drafts:', error);
+    }
+  }, [draftId]);
+
+  // Auto-save effect with debouncing
+  useEffect(() => {
+    if (!isAutoSaveEnabled) return;
+    
+    const timer = setTimeout(() => {
+      if (hasUnsavedChanges) {
+        const success = saveFormDraft({
+          id: draftId,
+          title,
+          description,
+          questions,
+          whitelistType,
+          whitelistValue,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          autosave: true
+        });
+        
+        if (success) {
+          setLastSaved(new Date());
+          setHasUnsavedChanges(false);
+          setSaveStatus('saved');
+          // Refresh the drafts list after saving
+          const updatedDrafts = getAllFormDrafts();
+          setDrafts(updatedDrafts);
+        }
+      }
+    }, 1500); // 1.5 second debounce
+
+    return () => clearTimeout(timer);
+  }, [title, description, questions, whitelistType, whitelistValue, hasUnsavedChanges, isAutoSaveEnabled]);
+  
+  // Update save status when changes are made
+  useEffect(() => {
+    if (hasUnsavedChanges) {
+      setSaveStatus('unsaved');
+    }
+  }, [hasUnsavedChanges]);
+
+  // Mark changes whenever state updates
+  useEffect(() => {
+    setHasUnsavedChanges(true);
+  }, [title, description, questions, whitelistType, whitelistValue]);
 
   const addQuestion = () => {
     setQuestions([
@@ -282,6 +367,128 @@ const FormCreator: React.FC = () => {
     setQuestions(reorderedQuestions);
   };
 
+  
+  // State for delete confirmation
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    open: boolean;
+    draftId: string | null;
+    draftTitle: string;
+  }>({
+    open: false,
+    draftId: null,
+    draftTitle: ''
+  });
+
+  // Draft list component
+  const DraftList = () => (
+    <div className="mt-6 p-4 rounded-xl border border-border bg-background">
+      <h3 className="text-lg font-semibold mb-3 flex items-center">
+        <Clock className="w-4 h-4 mr-2" />
+        Saved Drafts
+      </h3>
+      
+      {drafts.length === 0 ? (
+        <p className="text-sm text-muted-foreground italic">No saved drafts found</p>
+      ) : (
+        <div className="space-y-2 max-h-60 overflow-y-auto">
+          {drafts.map((draft) => (
+            <div
+              key={draft.id}
+              className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-secondary/50 transition-colors cursor-pointer group"
+              onClick={() => {
+                // Load the selected draft
+                setTitle(draft.title);
+                setDescription(draft.description);
+                setQuestions(draft.questions);
+                setWhitelistType(draft.whitelistType);
+                setWhitelistValue(draft.whitelistValue);
+                setDraftId(draft.id);
+                
+                // Show toast notification
+                toast({
+                  title: "Draft loaded",
+                  description: `Loaded draft: ${draft.title}`,
+                  duration: 3000,
+                });
+              }}
+            >
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm truncate">{draft.title || 'Untitled Draft'}</p>
+                <p className="text-xs text-muted-foreground">
+                  {new Date(draft.updatedAt).toLocaleString()}
+                </p>
+              </div>
+              <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Edit className="w-4 h-4 text-primary" />
+                <span className="text-xs text-primary">Edit</span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeleteConfirm({
+                      open: true,
+                      draftId: draft.id,
+                      draftTitle: draft.title || 'Untitled Draft'
+                    });
+                  }}
+                  className="p-1 text-destructive hover:text-destructive/80 transition-colors"
+                  aria-label="Delete draft"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirm.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div
+            className="bg-background rounded-lg border border-border p-6 max-w-md w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center mb-4">
+              <AlertTriangle className="w-6 h-6 text-destructive mr-3" />
+              <h3 className="text-lg font-semibold">Delete Draft</h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-6">
+              Are you sure you want to delete the draft "{deleteConfirm.draftTitle}"? This action cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirm({ open: false, draftId: null, draftTitle: '' })}
+                className="px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-secondary transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (deleteConfirm.draftId) {
+                    deleteFormDraft(deleteConfirm.draftId);
+                    setDrafts(drafts.filter(d => d.id !== deleteConfirm.draftId));
+                    setDeleteConfirm({ open: false, draftId: null, draftTitle: '' });
+                    toast({
+                      title: "Draft deleted",
+                      description: "Your draft has been permanently deleted.",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+                className="px-4 py-2 bg-destructive text-destructive-foreground rounded-lg text-sm font-medium hover:bg-destructive/90 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="max-w-3xl mx-auto pb-16">
       <div className="mb-8 flex justify-between items-center">
@@ -290,6 +497,23 @@ const FormCreator: React.FC = () => {
           <p className="text-muted-foreground mt-1">
             Design your form and set access permissions
           </p>
+        </div>
+        <div className="flex items-center space-x-2">
+          {saveStatus === 'saved' ? (
+            <div className="flex items-center text-green-600">
+              <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              <span className="text-sm">Saved</span>
+            </div>
+          ) : (
+            <div className="flex items-center text-yellow-600">
+              <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+              </svg>
+              <span className="text-sm">Unsaved</span>
+            </div>
+          )}
         </div>
         <button
           type="button"
@@ -586,11 +810,13 @@ const FormCreator: React.FC = () => {
           </div>
         </div>
         
+        <DraftList />
+        
         <div className="flex justify-end">
           <button
             type="submit"
             disabled={saving}
-            className={`px-6 py-3 rounded-lg bg-primary text-primary-foreground font-medium flex items-center 
+            className={`px-6 py-3 rounded-lg bg-primary text-primary-foreground font-medium flex items-center
               ${saving ? 'opacity-80 cursor-wait' : 'button-hover'}`}
           >
             {saving ? (

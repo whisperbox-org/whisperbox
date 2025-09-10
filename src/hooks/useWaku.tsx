@@ -10,7 +10,6 @@ import {
 } from "@waku/interfaces"
 import { WakuClient } from "@/lib/waku";
 import { walletService } from "@/lib/wallet";
-import { BOOTSTRAP_NODES, NETWORK_CONFIG } from "@/config/waku";
 import { WakuContext } from "@/contexts/WakuContext";
 
 interface Props {
@@ -28,8 +27,9 @@ export const WakuContextProvider = ({ children, updateStatus }: Props) => {
     const address = walletService.getConnectedWallet();
 
     useEffect(() => {
+        console.log("WakuContextProvider: address changed", address);
         const connectToWaku = async () => {
-            if (connected || connecting || node || !address) return;
+            if (connected || connecting || node ) return;
             
             try {
                 setConnecting(true);
@@ -37,8 +37,7 @@ export const WakuContextProvider = ({ children, updateStatus }: Props) => {
                 updateStatus("Starting Waku node", "info", 2000);
                 
                 const ln = await createLightNode({
-                    networkConfig: NETWORK_CONFIG,
-                    bootstrapPeers: BOOTSTRAP_NODES,
+                    defaultBootstrap: true,
                 });
                 console.log("Light node created");
                 
@@ -57,13 +56,15 @@ export const WakuContextProvider = ({ children, updateStatus }: Props) => {
                 console.log("Getting all peers");
                 console.log(await ln.libp2p.peerStore.all());
                 
-                ln.health.addEventListener(HealthStatusChangeEvents.StatusChange, (hs) => {
+                
+                console.log(ln)
+                ln.events.addEventListener("waku:health", (hs) => {
                     setHealth(hs.detail);
                 });
                 
+                
                 const c = new WakuClient(ln);
                 setClient(c);
-                c.setAddress(address);
                 await c.init();
                 
                 setStatus("connected");
@@ -78,6 +79,12 @@ export const WakuContextProvider = ({ children, updateStatus }: Props) => {
         
         connectToWaku();
     }, [address, connected, connecting, node, updateStatus]);
+
+    useEffect(() => {
+        if (!client || !address) return;
+        console.log("Waku client and address available");
+        client.setAddress(address);
+    }, [client, address]);
 
     const stop = useCallback(() => {
         node?.stop()

@@ -39,8 +39,10 @@ const View: React.FC = () => {
 
   useEffect(() => {
     const loadForm = async () => {
+      console.log("Loading form", id, client, connected)
       setLoading(true);
       if (!client || !connected) return
+      console.log("Waku client connected, proceeding")
       
       if (!id) {
         navigate('/forms');
