@@ -76,12 +76,9 @@ export class WakuClient extends EventEmitter {
                 return
             }
 
-            await this.dispatcher.initContentTopic(CONTENT_TOPIC)
-
             this.dispatcher.on(MessageTypes.NEW_FORM, this.handleNewForm.bind(this))
             this.dispatcher.on(MessageTypes.FORM_RESPONSE, this.handleResponse.bind(this))
             this.dispatcher.on(MessageTypes.CONFIRMATION_RESPONSE, this.handleConfirmation.bind(this))
-
 
             await this.dispatcher.start()
             try {

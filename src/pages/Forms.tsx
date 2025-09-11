@@ -70,6 +70,8 @@ const Forms: React.FC = () => {
     return () => {
       window.removeEventListener('wallet_changed', loadForms);
       window.removeEventListener('wallet_disconnected', loadForms);
+      if (client)
+        client.off(ClientEvents.NEW_FORM, loadForms)
     };
   }, [connected, client]);
 

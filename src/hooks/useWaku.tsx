@@ -58,6 +58,12 @@ export const WakuContextProvider = ({ children, updateStatus }: Props) => {
                 
                 
                 console.log(ln)
+                
+                
+                const c = new WakuClient(ln);
+                setClient(c);
+                await c.init();
+
                 ln.events.addEventListener("waku:health", (hs) => {
                     setHealth(hs.detail);
                     switch(hs.detail) {
@@ -67,14 +73,10 @@ export const WakuContextProvider = ({ children, updateStatus }: Props) => {
                             break;
                         case HealthStatus.Unhealthy:
                             updateStatus("Waku node is unhealthy", "warning", 3000);
+                            setConnected(false);
                             break;
                     }
                 });
-                
-                
-                const c = new WakuClient(ln);
-                setClient(c);
-                await c.init();
                 
                 setStatus("connected");
                 setConnected(true);
