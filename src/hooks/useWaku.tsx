@@ -60,6 +60,15 @@ export const WakuContextProvider = ({ children, updateStatus }: Props) => {
                 console.log(ln)
                 ln.events.addEventListener("waku:health", (hs) => {
                     setHealth(hs.detail);
+                    switch(hs.detail) {
+                        case HealthStatus.MinimallyHealthy || HealthStatus.SufficientlyHealthy:
+                            updateStatus("Waku node is healthy", "success", 3000);
+                            setConnected(true);
+                            break;
+                        case HealthStatus.Unhealthy:
+                            updateStatus("Waku node is unhealthy", "warning", 3000);
+                            break;
+                    }
                 });
                 
                 
